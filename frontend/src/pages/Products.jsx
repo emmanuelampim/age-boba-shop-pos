@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import * as api from '../api/client'
-import { formatCents } from '../lib/money'
+import { formatCents, ghsToCents, centsToGhs } from '../lib/money'
 import Badge from '../components/Badge'
 import Modal from '../components/ui/Modal'
 import EmptyState from '../components/ui/EmptyState'
@@ -9,7 +9,7 @@ import Skeleton from '../components/ui/Skeleton'
 import { useToast } from '../store/toast'
 import { useAuth } from '../store/auth'
 
-const CENTS_FIELD_HELP = 'Prices are in pesewas as integers (e.g. 2500 = GH₵25.00).'
+const CENTS_FIELD_HELP = 'Prices are in Ghana cedis (GH₵), e.g. 25 = GH₵25.00.'
 
 export default function Products() {
   const { addToast } = useToast()
@@ -52,9 +52,9 @@ export default function Products() {
     setForm({
       name: p.name,
       categoryId: p.category_id,
-      price: p.price ?? '',
+      price: p.price == null ? '' : centsToGhs(p.price),
       hasSizes: p.sizes.length > 0,
-      sizes: p.sizes.map((s) => ({ id: s.id, name: s.name, price: s.price, inventoryItemId: s.inventory_item_id ?? '' })),
+      sizes: p.sizes.map((s) => ({ id: s.id, name: s.name, price: centsToGhs(s.price), inventoryItemId: s.inventory_item_id ?? '' })),
       toppingIds: p.toppings.map((t) => t.id),
       status: p.status,
     })
@@ -81,13 +81,13 @@ export default function Products() {
         .filter((s) => s.name.trim() !== '')
         .map((s) => ({
           name: s.name.trim(),
-          price: Number(s.price),
+          price: ghsToCents(s.price),
           ...(s.inventoryItemId ? { inventoryItemId: Number(s.inventoryItemId) } : {}),
         }))
       payload.price = null
     } else {
       payload.sizes = []
-      payload.price = form.price === '' ? null : Number(form.price)
+      payload.price = form.price === '' ? null : ghsToCents(form.price)
     }
     payload.toppingIds = form.toppingIds
 
@@ -228,15 +228,15 @@ export default function Products() {
 
         {form && !form.hasSizes && (
           <div className="input-group mt-md">
-            <label htmlFor="p-price">Price {form.status && '(pesewas)'}</label>
-            <input id="p-price" className="input" type="number" min="0" step="1" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="e.g. 1000" />
+            <label htmlFor="p-price">Price (GH₵)</label>
+            <input id="p-price" className="input" type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="e.g. 25.00" />
             <div className="input-error">{CENTS_FIELD_HELP}</div>
           </div>
         )}
 
         {form && form.hasSizes && (
           <div className="mt-md">
-            <div className="text-sm text-muted mb-sm">Sizes (prices in pesewas)</div>
+            <div className="text-sm text-muted mb-sm">Sizes (prices in GH₵)</div>
             {form.sizes.map((s, si) => (
               <div className="flex gap-sm mb-sm" key={si} style={{ alignItems: 'flex-end' }}>
                 <div className="input-group" style={{ flex: 1 }}>
@@ -244,8 +244,8 @@ export default function Products() {
                   <input className="input" value={s.name} onChange={(e) => updateSize(si, { name: e.target.value })} placeholder="Large" />
                 </div>
                 <div className="input-group" style={{ width: 110 }}>
-                  <label>Price</label>
-                  <input className="input" type="number" min="0" value={s.price} onChange={(e) => updateSize(si, { price: e.target.value })} />
+                  <label>Price (GH₵)</label>
+                  <input className="input" type="number" min="0" step="0.01" value={s.price} onChange={(e) => updateSize(si, { price: e.target.value })} />
                 </div>
                 <div className="input-group" style={{ flex: 1 }}>
                   <label>Cup item</label>

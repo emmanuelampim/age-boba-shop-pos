@@ -33,7 +33,7 @@ const agent = () => request.agent(app);
 
 async function ownerAgent() {
   const a = agent();
-  await a.post('/api/auth/login').send({ email: 'owner@example.com', password: 'Owner@123' }).expect(200);
+  await a.post('/api/auth/login').send({ email: 'mavisampim@gmail.com', password: 'Owner@123' }).expect(200);
   return a;
 }
 
@@ -50,16 +50,16 @@ async function listBoba(a) {
 
 test('auth: rejects empty body and bad password', async () => {
   await request(app).post('/api/auth/login').send({}).expect(400);
-  await agent().post('/api/auth/login').send({ email: 'owner@example.com', password: 'wrong-pass' }).expect(401);
+  await agent().post('/api/auth/login').send({ email: 'mavisampim@gmail.com', password: 'wrong-pass' }).expect(401);
 });
 
 test('auth: login, /auth/me, and logout', async () => {
   const a = agent();
-  const res = await a.post('/api/auth/login').send({ email: 'owner@example.com', password: 'Owner@123' }).expect(200);
+  const res = await a.post('/api/auth/login').send({ email: 'mavisampim@gmail.com', password: 'Owner@123' }).expect(200);
   assert.equal(res.body.data.role, 'OWNER');
 
   const me = await a.get('/api/auth/me').expect(200);
-  assert.equal(me.body.data.email, 'owner@example.com');
+  assert.equal(me.body.data.email, 'mavisampim@gmail.com');
 
   await a.post('/api/auth/logout').expect(200);
   await a.get('/api/auth/me').expect(401);

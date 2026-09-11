@@ -121,6 +121,9 @@ export function createRouter() {
       if (patch.status !== undefined && !['ACTIVE', 'INACTIVE'].includes(patch.status)) {
         return sendError(res, badRequest('VALIDATION_ERROR', 'status must be ACTIVE or INACTIVE.'));
       }
+      if (patch.email !== undefined && (typeof patch.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patch.email.trim()))) {
+        return sendError(res, badRequest('VALIDATION_ERROR', 'email must be a valid email address.'));
+      }
       const user = updateUser({ userId: id, patch, user: req.user });
       return ok(res, user);
     } catch (err) {

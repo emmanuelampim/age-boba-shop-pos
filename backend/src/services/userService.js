@@ -48,10 +48,19 @@ export function updateUser({ userId, patch, user }) {
       }
     }
     const name = patch.name !== undefined ? patch.name.trim() : target.name;
+    const email = patch.email !== undefined ? patch.email.trim().toLowerCase() : target.email;
     const role = patch.role !== undefined ? patch.role : target.role;
     const status = patch.status !== undefined ? patch.status : target.status;
 
-    db.prepare('UPDATE users SET name = ?, role = ?, status = ?, updated_at = datetime(\'now\') WHERE id = ?').run(name, role, status, userId);
+    if (patch.email !== undefined) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new AppError(400, 'VALIDATION_ERROR', 'email must be a valid email address.');
+      }
+      const inUse = db.prepare('SELECT id FROM users WHERE email = ? COLLATE NOCASE AND id <> ?').get(email, userId);
+      if (inUse) throw new AppError(409, 'EMAIL_IN_USE', 'A user with that email already exists.');
+    }
+
+    db.prepare('UPDATE users SET name = ?, email = ?, role = ?, status = ?, updated_at = datetime(\'now\') WHERE id = ?').run(name, email, role, status, userId);
     if (patch.password) {
       if (String(patch.password).length < 8) throw new AppError(400, 'WEAK_PASSWORD', 'Password must be at least 8 characters.');
       db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(patch.password), userId);

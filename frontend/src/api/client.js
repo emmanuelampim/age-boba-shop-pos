@@ -34,6 +34,10 @@ async function request(path, options = {}) {
     throw new Error(data.error?.message || 'Unknown error')
   }
 
+  if (data.pagination) {
+    return { data: data.data, pagination: data.pagination }
+  }
+
   return data.data
 }
 

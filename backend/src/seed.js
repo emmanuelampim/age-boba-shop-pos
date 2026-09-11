@@ -19,9 +19,9 @@ export async function seed(db = getDb()) {
     db,
     'users',
     'email = ? COLLATE NOCASE',
-    ['owner@example.com'],
+    ['mavisampim@gmail.com'],
     'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-    ['Owner', 'owner@example.com', hashPassword('Owner@123'), 'OWNER'],
+    ['Owner', 'mavisampim@gmail.com', hashPassword('Owner@123'), 'OWNER'],
   );
 
   const branchId = insertOrSkip(
@@ -199,7 +199,7 @@ async function main() {
     await initDatabase({ filePath: config.dbPath });
     const { ownerId, branchId } = await seed();
     console.log(`Seeded. owner(id=${ownerId}), branch(id=${branchId})`);
-    console.log('Login: owner@example.com / Owner@123  (change it!)');
+    console.log('Login: mavisampim@gmail.com / Owner@123  (change it!)');
     closeDb();
   } catch (err) {
     console.error('Seed failed:', err);

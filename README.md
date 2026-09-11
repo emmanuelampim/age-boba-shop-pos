@@ -50,7 +50,7 @@ cp .env.example .env            # VITE_API_URL=http://localhost:4000/api
 npm run dev                     # app on http://localhost:5173 (dev only)
 ```
 
-Seed login: **owner@example.com / Owner@123** (change immediately in Settings → Users).
+Seed login: **mavisampim@gmail.com / Owner@123** (change immediately in Settings → Users).
 
 Health check: `GET http://localhost:4000/api/health`
 

@@ -163,7 +163,7 @@ export default function Settings() {
       if (userModal?.id) {
         if (userForm.password) payload.password = userForm.password
         if (userModal.email !== userForm.email.trim() && userForm.email.trim()) {
-          addToast('Email changes are not supported. Create a new account instead.', 'info')
+          payload.email = userForm.email.trim()
         }
         await api.patch(`/users/${userModal.id}`, payload)
         addToast('User updated')
@@ -419,7 +419,7 @@ export default function Settings() {
           </div>
           <div className="input-group" style={{ gridColumn: '1 / -1' }}>
             <label htmlFor="u-email">Email</label>
-            <input id="u-email" className="input" type="email" value={userForm.email} disabled={!!userModal} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} />
+            <input id="u-email" className="input" type="email" value={userForm.email} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} />
             {userModal && <div className="input-error">Email is fixed; create a new account instead.</div>}
           </div>
           <div className="input-group" style={{ gridColumn: '1 / -1' }}>

@@ -25,7 +25,7 @@ FIRST-TIME SETUP
    - A "Boba POS Server" window appears (it can be minimized).
    - Browser opens at http://localhost:4000
    - The first run creates backend\data\pos.db and seeds the shop:
-     owner@example.com / Owner@123   (CHANGE THIS PASSWORD! Settings -> Users)
+     mavisampim@gmail.com / Owner@123   (CHANGE THIS PASSWORD! Settings -> Users)
 2. If the screen that opens can be seen by customers, set a kiosk mode
    later so they can't close the tab.
 
