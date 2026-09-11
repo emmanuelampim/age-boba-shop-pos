@@ -13,6 +13,7 @@ import * as orderRoutes from './routes/orders.js';
 import * as inventoryRoutes from './routes/inventory.js';
 import * as dashboardRoutes from './routes/dashboard.js';
 import * as settingsRoutes from './routes/settings.js';
+import * as shutdownRoutes from './routes/shutdown.js';
 import { logger } from './lib/logger.js';
 
 function cookieParser(req, _res, next) {
@@ -71,6 +72,11 @@ export async function createApp({ runMigrationsOnStart = true } = {}) {
   app.use('/api/inventory', inventoryRoutes.createRouter());
   app.use('/api/dashboard', dashboardRoutes.createRouter());
   app.use('/api', settingsRoutes.createRouter());
+
+  // Only expose the self-shutdown endpoint on real (non-test) deployments.
+  if (!config.testing) {
+    app.use('/api', shutdownRoutes.createRouter());
+  }
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } });

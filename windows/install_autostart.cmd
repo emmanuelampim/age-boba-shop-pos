@@ -1,24 +1,52 @@
 @echo off
 rem ============================================================
 rem  Boba POS  -  install_autostart.cmd
-rem  Writes a VBS launcher into the Startup folder using the
-rem  ABSOLUTE path to this folder, so the POS starts on every
-rem  boot. Also starts the POS right now.  Run as the Windows
-rem  user that will be logged in when the shop opens.
+rem  Makes the POS start automatically every time the computer
+rem  boots or a user logs on. Registers THREE independent
+rem  mechanisms so it starts even if one is disabled:
+rem    1. Startup-folder shortcut (VBS)
+rem    2. Windows Registry "Run" key (registry)
+rem    3. Task Scheduler "at logon" task
+rem  All of them point at the SAME hidden launcher with the
+rem  absolute path baked in. Also starts the POS right now.
 rem ============================================================
-setlocal
+setlocal enabledelayedexpansion
+
 rem --- resolve the folder this script lives in -----------------
 for %%I in ("%~dp0.") do set "POS_DIR=%%~fI"
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
 
-rem --- generate a VBS with the correct absolute path -----------
+rem --- 1) Startup-folder VBS with the correct absolute path ----
 >"%STARTUP%\BobaPOS.vbs" (
     echo Set ws = CreateObject("Wscript.Shell"^)
     echo ws.Run """%POS_DIR%\start_pos.cmd""", 0, False
 )
-echo Installed auto-start (boot): BobaPOS.vbs
-echo Source path: %POS_DIR%\start_pos.cmd
+if exist "%STARTUP%\BobaPOS.vbs" (
+    echo [ok] Startup folder: BobaPOS.vbs
+) else (
+    echo [!!] Could not write to the Startup folder.
+)
+
+rem --- 2) Registry Run key (logs on with the current user) -----
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "BobaPOS" /t REG_SZ /d "\"wscript.exe\" \"%STARTUP%\BobaPOS.vbs\"" /f >nul 2>&1
+if %errorlevel%==0 (
+    echo [ok] Registry: HKCU\...\Run\BobaPOS
+) else (
+    echo [!!] Could not write the Registry Run key.
+)
+
+rem --- 3) Task Scheduler "at logon" task ------------------------
+schtasks /Create /TN "BobaPOS" /TR "\"%STARTUP%\BobaPOS.vbs\"" /SC ONLOGON /RL LIMITED /F >nul 2>&1
+if %errorlevel%==0 (
+    echo [ok] Task Scheduler: BobaPOS at logon
+) else (
+    echo [!!] Could not create the scheduled task ^(needs permission^). The other two methods still work.
+)
+
+echo --------------------------------------------
+echo All methods point at: %POS_DIR%\start_pos.cmd
 echo Starting Boba POS now...
 cscript //nologo "%STARTUP%\BobaPOS.vbs"
-echo Done.
+echo Done. The POS will now start on every boot.
+echo (To remove auto-start later, run: windows\remove_autostart.cmd)
 endlocal

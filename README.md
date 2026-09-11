@@ -153,6 +153,7 @@ Common response shapes:
 | PATCH  | `/api/settings/payment-methods/:id` | OWNER | Toggle payment method                   |
 | PATCH  | `/api/users/:id`              | OWNER       | Update user (role/status/password)       |
 | GET    | `/api/users`                  | OWNER       | List users                               |
+| POST   | `/api/shutdown`               | auth        | Save everything, stop the server (POS only, disabled in tests) |
 | GET    | `/health`                     | public      | App + DB health check                    |
 
 ### Order creation example
@@ -256,7 +257,8 @@ On the Win7 box (see `windows/`):
 - **Node.js 12.22.12** (last Node with Windows 7 support) — required once at setup.
 - **Chrome 109** (last Chrome for Windows 7) or Firefox ESR for the cashier screen.
 - zero-install at runtime: `start_pos.cmd` launches `backend/dist/server.cjs`; the first run auto-migrates + auto-seeds the DB; the server serves the built frontend from `frontend/dist` — **one process, no internet needed**.
-- **Autostart**: `windows\install_autostart.cmd` copies `launch_pos.vbs` into the Startup folder. Every boot, the POS server starts hidden and the browser opens at `http://localhost:4000` with no clicks.
+- **Autostart**: `windows\install_autostart.cmd` registers the POS **three independent ways** (Startup-folder VBS, Registry `Run` key, and a Task Scheduler "at logon" task) so it starts on every boot even if one method is disabled by antivirus or a mistake. Every boot, the POS server starts hidden and the browser opens at `http://localhost:4000` with no clicks. Remove with `windows\remove_autostart.cmd`.
+- **Close for the day**: every logged-in user sees a **"🔒 Close for the day"** button in the sidebar. It force-flushes the database to disk, returns a friendly "All sales are saved — you can switch off the computer" screen, then stops the server. No command lines needed for untrained staff. (`POST /api/shutdown`; disabled in the test environment.)
 - `windows\stop_pos.cmd` shuts it down; `backend\data\pos.db` is the shop's entire data file (back it up daily).
 
 ### Logging

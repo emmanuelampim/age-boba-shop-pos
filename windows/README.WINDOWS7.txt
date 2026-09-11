@@ -31,23 +31,29 @@ FIRST-TIME SETUP
 
 AUTO-START ON BOOT
 ------------------
-1. Right-click  windows\install_autostart.cmd  -> Run.
-   It writes BobaPOS.vbs (with the correct full path to this
-   folder) into your Startup folder and starts the POS now.
-2. Now every time the computer boots, the store will start the server
-   and open the POS page automatically.
-   - To remove later: delete
-     %APPDATA%\...\Start Menu\Programs\Startup\BobaPOS.vbs
-   - It will only auto-start for the Windows user that was logged in
-     when you ran install_autostart.cmd. Log in as that user.
+1. Right-click  windows\install_autostart.cmd  -> Run as the Windows
+   user who will be logged in when the shop opens.
+2. It registers the POS THREE independent ways so it always starts:
+     1. Startup-folder shortcut  (Startup\BobaPOS.vbs)
+     2. Registry Run key         (HKCU\...\CurrentVersion\Run)
+     3. Scheduled task           (at logon)
+   If one gets turned off by antivirus or a mistake, the others still
+   start the POS. It also starts the POS right now.
+3. Every boot: server starts hidden, the POS page opens in the
+   browser automatically, no clicks, no internet.
+- To REMOVE auto-start later:  windows\remove_autostart.cmd
 
 DAILY USE
 ---------
-- Already running? Just use the browser tab. Don't start it twice,
-  start_pos.cmd notices node.exe is already running (it is safe anyway).
+- Already running? Just use the browser tab. Don't start it twice
+  -- start_pos.cmd checks the port and just opens the page.
 - PC was turned OFF? Turn it on, log in, wait ~10 seconds: the POS
   opens by itself.
-- Close for the day: windows\stop_pos.cmd.
+- CLOSE FOR THE DAY (no command lines, one click):
+  In the POS, click the "Close for the day" button (bottom-left).
+  It re-saves ALL data, shows a green "All sales are saved" screen,
+  then turns the server off. After that you can switch off the
+  computer. Simple enough for anyone.
 
 BACKUPS (very important!)
 -------------------------

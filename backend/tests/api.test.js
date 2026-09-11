@@ -337,6 +337,11 @@ test('settings: logo upload endpoint removed (fixed receipt logo)', async () => 
   await a.post('/api/settings/logo').send({ dataUri }).expect(404);
 });
 
+test('shutdown: endpoint is only exposed outside test mode (safety)', async () => {
+  const a = await ownerAgent();
+  await a.post('/api/shutdown').expect(404);
+});
+
 test('settings: payment methods default to Cash and Mobile Money only', async () => {
   const a = await ownerAgent();
   const methods = await a.get('/api/settings/payment-methods').expect(200);

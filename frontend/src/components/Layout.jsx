@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { useAuth } from '../store/auth'
 import * as api from '../api/client'
+import ConfirmDialog from './ui/ConfirmDialog'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '📊', exact: true },
@@ -16,12 +17,45 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
   const [shopName, setShopName] = useState(null)
+  const [closeConfirm, setCloseConfirm] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const [closeError, setCloseError] = useState(null)
+  const [dayClosed, setDayClosed] = useState(false)
 
   useEffect(() => {
     api.get('/settings').then((s) => setShopName(s.shop_name)).catch(() => {})
   }, [])
 
   const brand = shopName || 'AGE BOBA SHOP'
+
+  const closeForDay = async () => {
+    setClosing(true)
+    setCloseError(null)
+    setCloseConfirm(false)
+    try {
+      await api.post('/shutdown')
+      setDayClosed(true)
+    } catch (e) {
+      setCloseError(e.message)
+      setClosing(false)
+    }
+  }
+
+  if (dayClosed) {
+    return (
+      <div className="day-closed-screen">
+        <div className="day-closed-box">
+          <div className="day-closed-icon" aria-hidden="true">🔒</div>
+          <h1>All sales are saved</h1>
+          <p>
+            You can now switch off the computer.
+            <br />
+            See you tomorrow!
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="app-shell">
@@ -49,6 +83,13 @@ export default function Layout({ children }) {
           ))}
         </nav>
         <div className="sidebar-footer">
+          <button
+            className="sidebar-link sidebar-close-day"
+            disabled={closing}
+            onClick={() => setCloseConfirm(true)}
+          >
+            🔒 {closing ? 'Saving…' : 'Close for the day'}
+          </button>
           <div style={{ fontWeight: 600, marginBottom: 2 }}>{user?.name}</div>
           <div style={{ opacity: 0.7, marginBottom: 6 }}>{user?.role.replace('_', ' ')}</div>
           <button
@@ -69,6 +110,22 @@ export default function Layout({ children }) {
       </div>
 
       <main className="main-content">{children}</main>
+
+      <ConfirmDialog
+        open={closeConfirm}
+        title="Close for the day?"
+        message="All sales are saved automatically. After closing, the POS shuts down. Press OK only when the shop is done for the day."
+        confirmLabel={closing ? 'Saving…' : 'Yes, close now'}
+        cancelLabel="Not yet"
+        onConfirm={closeForDay}
+        onCancel={() => setCloseConfirm(false)}
+      />
+
+      {closeError && (
+        <div className="close-error">
+          Could not save and close: {closeError}. Please try again.
+        </div>
+      )}
     </div>
   )
 }
