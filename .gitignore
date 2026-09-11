@@ -1,0 +1,24 @@
+# Dependencies
+**/node_modules/
+
+# Build output (backend Windows bundle is rebuilt via: cd backend && npm run build:win)
+backend/dist/
+
+# Frontend build output (dev only; prod site is built during deploy)
+frontend/dist/
+frontend/.vite/
+
+# Environment (never commit real secrets)
+**/.env
+**/.env.local
+
+# Runtime data — contains shop data + uploaded images; back up, don't commit
+backend/data/
+backend/uploads/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
