@@ -32,10 +32,14 @@ FIRST-TIME SETUP
 AUTO-START ON BOOT
 ------------------
 1. Right-click  windows\install_autostart.cmd  -> Run.
-   It copies launch_pos.vbs into the Startup folder and starts the POS.
+   It writes BobaPOS.vbs (with the correct full path to this
+   folder) into your Startup folder and starts the POS now.
 2. Now every time the computer boots, the store will start the server
    and open the POS page automatically.
-   - To remove later: delete %APPDATA%\...\Start Menu\Programs\Startup\BobaPOS.vbs
+   - To remove later: delete
+     %APPDATA%\...\Start Menu\Programs\Startup\BobaPOS.vbs
+   - It will only auto-start for the Windows user that was logged in
+     when you ran install_autostart.cmd. Log in as that user.
 
 DAILY USE
 ---------

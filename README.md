@@ -151,7 +151,6 @@ Common response shapes:
 | GET    | `/api/settings/payment-methods`| auth       | Active payment methods                   |
 | POST   | `/api/settings/payment-methods`| OWNER     | Add payment method                       |
 | PATCH  | `/api/settings/payment-methods/:id` | OWNER | Toggle payment method                   |
-| POST   | `/api/users`                  | OWNER       | Create user                              |
 | PATCH  | `/api/users/:id`              | OWNER       | Update user (role/status/password)       |
 | GET    | `/api/users`                  | OWNER       | List users                               |
 | GET    | `/health`                     | public      | App + DB health check                    |
