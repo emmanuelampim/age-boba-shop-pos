@@ -30,6 +30,14 @@ const DEFAULT_HOURS = {
   sat: { open: '15:00', close: '21:00', closed: false },
 }
 
+const SECTIONS = [
+  { id: 'shop', icon: '🏪', label: 'Shop information' },
+  { id: 'receipt', icon: '🧾', label: 'Receipt' },
+  { id: 'hours', icon: '🕐', label: 'Business hours', owner: true },
+  { id: 'payments', icon: '💳', label: 'Payment methods', owner: true },
+  { id: 'users', icon: '👥', label: 'Staff & roles', owner: true },
+]
+
 function formatHour12(value) {
   if (!value) return '—'
   const [h, m] = value.split(':').map(Number)
@@ -47,6 +55,7 @@ export default function Settings() {
   const [settings, setSettings] = useState(null)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [section, setSection] = useState(null)
 
   const [paymentMethods, setPaymentMethods] = useState([])
   const [users, setUsers] = useState([])
@@ -72,46 +81,18 @@ export default function Settings() {
 
   useEffect(() => { load() }, [load])
 
-  const saveSettings = async () => {
+  const set = (k, v) => setSettings((s) => ({ ...s, [k]: v }))
+
+  const saveSection = async (payload, label) => {
     setSaving(true)
     try {
-      await api.patch('/settings', {
-        shop_name: settings.shop_name,
-        shop_address: settings.shop_address,
-        shop_phone: settings.shop_phone,
-        shop_email: settings.shop_email,
-        receipt_footer: settings.receipt_footer,
-        receipt_logo_url: settings.receipt_logo_url,
-        receipt_show_logo: settings.receipt_show_logo,
-        receipt_show_address: settings.receipt_show_address,
-        receipt_show_phone: settings.receipt_show_phone,
-        currency_code: settings.currency_code,
-        currency_symbol: settings.currency_symbol,
-        hours: settings.hours || DEFAULT_HOURS,
-      })
-      addToast('Settings saved')
+      await api.patch('/settings', payload)
+      addToast(`${label} saved`)
     } catch (e) {
       addToast(e.message, 'error')
     } finally {
       setSaving(false)
     }
-  }
-
-  const uploadLogo = async (file) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = async () => {
-      try {
-        const res = await api.post('/settings/logo', { dataUri: reader.result })
-        set('receipt_logo_url', res.receipt_logo_url)
-        set('receipt_show_logo', res.show_logo)
-        addToast('Logo uploaded')
-      } catch (e) {
-        addToast(e.message, 'error')
-      }
-    }
-    reader.onerror = () => addToast('Could not read the selected file.', 'error')
-    reader.readAsDataURL(file)
   }
 
   const updateHours = (day, patch) => {
@@ -150,27 +131,24 @@ export default function Settings() {
   }
 
   const openUserModal = (u = null) => {
+    if (!u) return
     setUserModal(u)
-    setUserForm(u ? { name: u.name, email: u.email, password: '', role: u.role } : { name: '', email: '', password: '', role: 'CASHIER' })
+    setUserForm({ name: u.name, email: u.email, password: '', role: u.role })
   }
 
   const saveUser = async () => {
     try {
+      if (!userModal?.id) return
       const payload = {
         name: userForm.name.trim(),
         ...(userForm.role && { role: userForm.role }),
       }
-      if (userModal?.id) {
-        if (userForm.password) payload.password = userForm.password
-        if (userModal.email !== userForm.email.trim() && userForm.email.trim()) {
-          payload.email = userForm.email.trim()
-        }
-        await api.patch(`/users/${userModal.id}`, payload)
-        addToast('User updated')
-      } else {
-        await api.post('/users', { ...payload, email: userForm.email.trim(), password: userForm.password })
-        addToast('User created')
+      if (userForm.password) payload.password = userForm.password
+      if (userModal.email !== userForm.email.trim() && userForm.email.trim()) {
+        payload.email = userForm.email.trim()
       }
+      await api.patch(`/users/${userModal.id}`, payload)
+      addToast('User updated')
       setUserModal(null)
       load()
     } catch (e) {
@@ -197,22 +175,48 @@ export default function Settings() {
     )
   }
 
-  const set = (k, v) => setSettings((s) => ({ ...s, [k]: v }))
+  const sections = SECTIONS.filter((s) => !s.owner || isOwner)
 
-  return (
-    <div>
-      <div className="page-header">
-        <h1>Settings</h1>
-        {isOwner && (
-          <button className="btn btn-primary" disabled={saving} onClick={saveSettings}>
-            {saving ? 'Saving…' : 'Save settings'}
+  const goBack = () => setSection(null)
+
+  const Panel = ({ title, icon, onSave, children }) => (
+    <div className="settings-panel">
+      <div className="settings-panel-head">
+        <button className="btn btn-ghost btn-sm settings-back" onClick={goBack}>‹ Back</button>
+        <h2 className="settings-panel-title">
+          <span className="settings-icon">{icon}</span>
+          {title}
+        </h2>
+        {onSave && (
+          <button className="btn btn-primary btn-sm" disabled={saving} onClick={onSave}>
+            {saving ? 'Saving…' : 'Save'}
           </button>
         )}
       </div>
+      <div className="card">{children}</div>
+    </div>
+  )
 
-      <div className="dash-grid">
-        <div className="card">
-          <div className="card-header">Shop information</div>
+  const renderPanel = () => {
+    if (section === 'shop') {
+      return (
+        <Panel
+          title="Shop information"
+          icon="🏪"
+          onSave={() =>
+            saveSection(
+              {
+                shop_name: settings.shop_name,
+                shop_address: settings.shop_address,
+                shop_phone: settings.shop_phone,
+                shop_email: settings.shop_email,
+                currency_code: settings.currency_code,
+                currency_symbol: settings.currency_symbol,
+              },
+              'Shop information'
+            )
+          }
+        >
           <div className="grid-2">
             <div className="input-group">
               <label htmlFor="st-shop-name">Shop name</label>
@@ -239,39 +243,37 @@ export default function Settings() {
               <input id="st-csym" className="input" value={settings.currency_symbol ?? 'GH₵'} onChange={(e) => set('currency_symbol', e.target.value)} />
             </div>
           </div>
-        </div>
+        </Panel>
+      )
+    }
 
-        <div className="card">
-          <div className="card-header">Receipt</div>
-          <div className="input-group">
+    if (section === 'receipt') {
+      return (
+        <Panel
+          title="Receipt"
+          icon="🧾"
+          onSave={() =>
+            saveSection(
+              {
+                receipt_footer: settings.receipt_footer,
+                receipt_show_address: settings.receipt_show_address,
+                receipt_show_phone: settings.receipt_show_phone,
+              },
+              'Receipt'
+            )
+          }
+        >
+          <div className="receipt-card-logo">
+            <img src="/logo.png" alt="Receipt logo" />
+            <div className="text-sm text-muted">
+              This logo is the watermark shown faintly behind every receipt. Put a new one at <code>/logo.png</code> to change it.
+            </div>
+          </div>
+          <div className="input-group mt-md">
             <label htmlFor="st-footer">Footer message</label>
             <input id="st-footer" className="input" value={settings.receipt_footer ?? ''} onChange={(e) => set('receipt_footer', e.target.value)} placeholder="Thank you for visiting!" />
           </div>
-          <div className="input-group mt-md">
-            <label htmlFor="st-logo">Logo URL</label>
-            <input id="st-logo" className="input" value={settings.receipt_logo_url ?? ''} onChange={(e) => set('receipt_logo_url', e.target.value)} placeholder="https://…/logo.png" />
-          </div>
-          <div className="input-group mt-md">
-            <label htmlFor="st-logo-file">Upload logo</label>
-            <input
-              id="st-logo-file"
-              className="input"
-              type="file"
-              accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
-              onChange={(e) => uploadLogo(e.target.files?.[0])}
-            />
-            <div className="text-sm text-muted">PNG, JPG, GIF, WebP or SVG, max 1 MB. Show the logo on the receipt to enable it.</div>
-            {settings.receipt_logo_url && (
-              <div className="logo-preview">
-                <img src={settings.receipt_logo_url} alt="Current logo preview" />
-              </div>
-            )}
-          </div>
           <div className="mt-md">
-            <label className="flex gap-sm items-center mb-sm">
-              <input type="checkbox" checked={!!settings.receipt_show_logo} onChange={(e) => set('receipt_show_logo', e.target.checked)} />
-              <span className="text-sm">Show logo on receipt</span>
-            </label>
             <label className="flex gap-sm items-center mb-sm">
               <input type="checkbox" checked={!!settings.receipt_show_address} onChange={(e) => set('receipt_show_address', e.target.checked)} />
               <span className="text-sm">Show address on receipt</span>
@@ -281,131 +283,160 @@ export default function Settings() {
               <span className="text-sm">Show phone on receipt</span>
             </label>
           </div>
-</div>
-      </div>
+        </Panel>
+      )
+    }
 
-      {isOwner && (
-        <>
-          <div className="card mt-md">
-        <div className="card-header">Business hours</div>
-        <div className="text-sm text-muted mb-md">
-          Default: {formatHour12((settings.hours || DEFAULT_HOURS).mon?.open)} – {formatHour12((settings.hours || DEFAULT_HOURS).mon?.close)}, every day. You can adjust each day separately.
-          <button
-            className="btn btn-secondary btn-sm ml-sm"
-            onClick={() => setHoursForAll('mon', {})}
-          >
-            Apply today&apos;s times to all days
-          </button>
-        </div>
-        <div className="hours-grid">
-          {DAYS.map(([code, label]) => {
-            const day = settings.hours?.[code] || DEFAULT_HOURS[code]
-            return (
-              <div className={`hours-row${day.closed ? ' is-closed' : ''}`} key={code}>
-                <div className="hours-day">
-                  <strong>{label}</strong>
-                  <span className="hours-summary text-muted text-sm">
-                    {day.closed ? 'Closed' : `${formatHour12(day.open)} – ${formatHour12(day.close)}`}
-                  </span>
-                </div>
-                <label className="hours-closed-check">
-                  <input
-                    type="checkbox"
-                    checked={!!day.closed}
-                    onChange={(e) => updateHours(code, { closed: e.target.checked })}
-                  />
-                  <span>Closed</span>
-                </label>
-                {!day.closed && (
-                  <div className="hours-times">
-                    <div className="input-group">
-                      <label>Opens</label>
-                      <input className="input" type="time" value={day.open} onChange={(e) => updateHours(code, { open: e.target.value })} />
-                    </div>
-                    <div className="input-group">
-                      <label>Closes</label>
-                      <input className="input" type="time" value={day.close} onChange={(e) => updateHours(code, { close: e.target.value })} />
-                    </div>
+    if (section === 'hours') {
+      return (
+        <Panel
+          title="Business hours"
+          icon="🕐"
+          onSave={() => saveSection({ hours: settings.hours || DEFAULT_HOURS }, 'Business hours')}
+        >
+          <div className="text-sm text-muted mb-md">
+            Default: {formatHour12((settings.hours || DEFAULT_HOURS).mon?.open)} – {formatHour12((settings.hours || DEFAULT_HOURS).mon?.close)}, every day. You can adjust each day separately.
+            <button
+              className="btn btn-secondary btn-sm ml-sm"
+              onClick={() => setHoursForAll('mon', {})}
+            >
+              Apply today&apos;s times to all days
+            </button>
+          </div>
+          <div className="hours-grid">
+            {DAYS.map(([code, label]) => {
+              const day = settings.hours?.[code] || DEFAULT_HOURS[code]
+              return (
+                <div className={`hours-row${day.closed ? ' is-closed' : ''}`} key={code}>
+                  <div className="hours-day">
+                    <strong>{label}</strong>
+                    <span className="hours-summary text-muted text-sm">
+                      {day.closed ? 'Closed' : `${formatHour12(day.open)} – ${formatHour12(day.close)}`}
+                    </span>
                   </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                  <label className="hours-closed-check">
+                    <input
+                      type="checkbox"
+                      checked={!!day.closed}
+                      onChange={(e) => updateHours(code, { closed: e.target.checked })}
+                    />
+                    <span>Closed</span>
+                  </label>
+                  {!day.closed && (
+                    <div className="hours-times">
+                      <div className="input-group">
+                        <label>Opens</label>
+                        <input className="input" type="time" value={day.open} onChange={(e) => updateHours(code, { open: e.target.value })} />
+                      </div>
+                      <div className="input-group">
+                        <label>Closes</label>
+                        <input className="input" type="time" value={day.close} onChange={(e) => updateHours(code, { close: e.target.value })} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </Panel>
+      )
+    }
+
+    if (section === 'payments') {
+      return (
+        <Panel title="Payment methods" icon="💳">
+          <div className="flex gap-sm mb-md" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div className="input-group" style={{ flex: 1, minWidth: 140 }}>
+              <label htmlFor="pm-name">Name</label>
+              <input id="pm-name" className="input" value={newPm.name} onChange={(e) => setNewPm({ ...newPm, name: e.target.value })} placeholder="Cash" />
+            </div>
+            <div className="input-group" style={{ flex: 1, minWidth: 140 }}>
+              <label htmlFor="pm-code">Code</label>
+              <input id="pm-code" className="input" value={newPm.code} onChange={(e) => setNewPm({ ...newPm, code: e.target.value })} placeholder="CASH" />
+            </div>
+            <button className="btn btn-secondary" disabled={!newPm.name.trim() || !newPm.code.trim()} onClick={addPm}>Add</button>
+          </div>
+          <div className="flex gap-sm" style={{ flexWrap: 'wrap' }}>
+            {paymentMethods.map((m) => (
+              <button
+                key={m.id}
+                className={`btn btn-sm${m.is_active ? ' btn-primary' : ' btn-secondary'}`}
+                onClick={() => togglePm(m)}
+                title={`Click to ${m.is_active ? 'deactivate' : 'activate'}`}
+              >
+                {m.name} {m.is_active ? '✓' : '(off)'}
+              </button>
+            ))}
+          </div>
+        </Panel>
+      )
+    }
+
+    if (section === 'users') {
+      return (
+        <Panel title="Staff & roles" icon="👥">
+          {users.length === 0 && <EmptyState icon="👤" message="No staff yet." />}
+          {users.length > 0 && (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id}>
+                      <td><strong>{u.name}</strong>{u.id === user.id && <span className="text-muted text-sm"> (you)</span>}</td>
+                      <td>{u.email}</td>
+                      <td>{u.role}</td>
+                      <td><Badge status={u.status === 'ACTIVE' ? 'Active' : 'Inactive'} /></td>
+                      <td className="text-right">
+                        <div className="flex gap-sm justify-end">
+                          <button className="btn btn-secondary btn-sm" onClick={() => openUserModal(u)}>Edit</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => toggleUser(u)}>
+                            {u.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+      )
+    }
+
+    return null
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <h1>Settings</h1>
       </div>
 
-          <div className="card mt-md">
-            <div className="card-header">Payment methods</div>
-            <div className="flex gap-sm mb-md" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              <div className="input-group" style={{ flex: 1, minWidth: 140 }}>
-                <label htmlFor="pm-name">Name</label>
-                <input id="pm-name" className="input" value={newPm.name} onChange={(e) => setNewPm({ ...newPm, name: e.target.value })} placeholder="Cash" />
-              </div>
-              <div className="input-group" style={{ flex: 1, minWidth: 140 }}>
-                <label htmlFor="pm-code">Code</label>
-                <input id="pm-code" className="input" value={newPm.code} onChange={(e) => setNewPm({ ...newPm, code: e.target.value })} placeholder="CASH" />
-              </div>
-              <button className="btn btn-secondary" disabled={!newPm.name.trim() || !newPm.code.trim()} onClick={addPm}>Add</button>
-            </div>
-            <div className="flex gap-sm" style={{ flexWrap: 'wrap' }}>
-              {paymentMethods.map((m) => (
-                <button
-                  key={m.id}
-                  className={`btn btn-sm${m.is_active ? ' btn-primary' : ' btn-secondary'}`}
-                  onClick={() => togglePm(m)}
-                  title={`Click to ${m.is_active ? 'deactivate' : 'activate'}`}
-                >
-                  {m.name} {m.is_active ? '✓' : '(off)'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="card mt-md">
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Staff & roles</span>
-              <button className="btn btn-primary btn-sm" onClick={() => openUserModal()}>+ Add user</button>
-            </div>
-            {users.length === 0 && <EmptyState icon="👤" message="No staff yet." />}
-            {users.length > 0 && (
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th className="text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id}>
-                        <td><strong>{u.name}</strong>{u.id === user.id && <span className="text-muted text-sm"> (you)</span>}</td>
-                        <td>{u.email}</td>
-                        <td>{u.role}</td>
-                        <td><Badge status={u.status === 'ACTIVE' ? 'Active' : 'Inactive'} /></td>
-                        <td className="text-right">
-                          <div className="flex gap-sm justify-end">
-                            <button className="btn btn-secondary btn-sm" onClick={() => openUserModal(u)}>Edit</button>
-                            <button className="btn btn-ghost btn-sm" onClick={() => toggleUser(u)}>
-                              {u.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </>
+      {section === null ? (
+        <div className="settings-menu">
+          {sections.map((s) => (
+            <button key={s.id} className="settings-row" onClick={() => setSection(s.id)}>
+              <span className="settings-icon">{s.icon}</span>
+              <span className="settings-label">{s.label}</span>
+              <span className="settings-chevron">›</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        renderPanel()
       )}
 
-      {/* User modal */}
-      <Modal open={!!userModal || !!userForm} title={userModal ? `Edit ${userModal.name}` : 'Add user'} onClose={() => setUserModal(null)}>
+      <Modal open={!!userModal} title={userModal ? `Edit ${userModal.name}` : ''} onClose={() => setUserModal(null)}>
         <div className="grid-2">
           <div className="input-group">
             <label htmlFor="u-name">Name</label>
@@ -420,10 +451,9 @@ export default function Settings() {
           <div className="input-group" style={{ gridColumn: '1 / -1' }}>
             <label htmlFor="u-email">Email</label>
             <input id="u-email" className="input" type="email" value={userForm.email} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} />
-            {userModal && <div className="input-error">Email is fixed; create a new account instead.</div>}
           </div>
           <div className="input-group" style={{ gridColumn: '1 / -1' }}>
-            <label htmlFor="u-pass">{userModal ? 'New password (leave blank to keep)' : 'Password (min 8 chars)'}</label>
+            <label htmlFor="u-pass">New password (leave blank to keep)</label>
             <input id="u-pass" className="input" type="password" autoComplete="new-password" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} />
           </div>
         </div>
@@ -431,10 +461,10 @@ export default function Settings() {
           <button className="btn" onClick={() => setUserModal(null)}>Cancel</button>
           <button
             className="btn btn-primary"
-            disabled={!userForm.name.trim() || (!userModal && (!userForm.email.trim() || userForm.password.length < 8))}
+            disabled={!userForm.name.trim()}
             onClick={saveUser}
           >
-            {userModal ? 'Save changes' : 'Create user'}
+            Save changes
           </button>
         </div>
       </Modal>

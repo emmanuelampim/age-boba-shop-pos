@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import * as api from '../api/client'
 import { useCart } from '../store/cart'
 import { useToast } from '../store/toast'
+import { useAuth } from '../store/auth'
 import { formatCents } from '../lib/money'
 import Modal from '../components/ui/Modal'
 import EmptyState from '../components/ui/EmptyState'
@@ -9,8 +10,7 @@ import ErrorState from '../components/ui/ErrorState'
 import Skeleton from '../components/ui/Skeleton'
 import ReceiptView from '../components/ReceiptView'
 
-const PRODUCT_ICONS = ['🧋', '🍹', '🍨', '🍿', '🥧', '🧁', '🥟', '🧅']
-const FALLBACK_ICON = '🍽️'
+const PRODUCT_ICON = '🧋'
 
 export default function NewSale() {
   const { items, subtotal, itemCount, dispatch } = useCart()
@@ -38,6 +38,7 @@ export default function NewSale() {
   const [requestId, setRequestId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [receipt, setReceipt] = useState(null)
+  const { user } = useAuth()
 
   const load = useCallback(() => {
     setError(null)
@@ -60,7 +61,7 @@ export default function NewSale() {
 
   const c = (n) => formatCents(n)
 
-  const iconFor = (i) => PRODUCT_ICONS[i < PRODUCT_ICONS.length ? i : PRODUCT_ICONS.length - 1] || FALLBACK_ICON
+  const iconFor = () => PRODUCT_ICON
 
   const visibleProducts = useMemo(() => {
     if (!products) return []
@@ -176,6 +177,7 @@ export default function NewSale() {
     discount: discountCents,
     total: displayTotal,
     payment_method: selectedPayName || '—',
+    user: { name: user?.name },
   }
 
   if (error) return <ErrorState message={error} onRetry={load} />

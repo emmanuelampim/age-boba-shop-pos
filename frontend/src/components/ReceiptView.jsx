@@ -7,11 +7,7 @@ export default function ReceiptView({ order, settings }) {
 
   return (
     <div className="receipt" aria-label="Receipt">
-      {r.showLogo && r.logoUrl && (
-        <div className="receipt-logo">
-          <img src={r.logoUrl} alt={`${r.shopName || 'Shop'} logo`} />
-        </div>
-      )}
+      <img className="receipt-watermark" src="/logo.png" alt="" aria-hidden="true" />
       <div className="receipt-header">
         <h2>{r.shopName || 'AGE BOBA SHOP'}</h2>
         {r.showAddress && r.shopAddress && <p>{r.shopAddress}</p>}
@@ -69,6 +65,12 @@ export default function ReceiptView({ order, settings }) {
         <span>Payment</span>
         <span className="num">{r.paymentMethod}</span>
       </div>
+      {r.servedBy && (
+        <div className="receipt-line">
+          <span>Served by</span>
+          <span className="num">{r.servedBy}</span>
+        </div>
+      )}
       {r.footer && (
         <>
           <hr className="receipt-divider" />

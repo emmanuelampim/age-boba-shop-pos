@@ -1,16 +1,16 @@
 :root {
-  --color-bg: #f5f3ef;
-  --color-bg-alt: #eae7e1;
+  --color-bg: #fdf6ec;
+  --color-bg-alt: #f5ead9;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-border: #e0ddd6;
-  --color-border-focus: #6b3f23;
+  --color-border: #ecdcc6;
+  --color-border-focus: #ea580c;
   --color-text: #1a1a1a;
   --color-text-muted: #6b6560;
   --color-text-light: #9a958e;
-  --color-primary: #6b3f23;
-  --color-primary-hover: #522f1a;
-  --color-primary-light: #f7ede5;
+  --color-primary: #ea580c;
+  --color-primary-hover: #c2410c;
+  --color-primary-light: #ffedd5;
   --color-accent: #2d6a4f;
   --color-accent-light: #e8f5ee;
   --color-danger: #b91c1c;
@@ -294,7 +294,7 @@ input, button, select, textarea {
 .select:focus {
   outline: none;
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 3px rgba(107,63,35,.12);
+  box-shadow: 0 0 0 3px rgba(234,88,12,.15);
 }
 .input::placeholder { color: var(--color-text-light); }
 .input.error { border-color: var(--color-danger); }
@@ -350,26 +350,21 @@ tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover { background: var(--color-bg); }
 
 /* ─── Modal ────────────────────────────────────────── */
-.modal-overlay {
+.modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.45);
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: fadeIn .15s ease;
-}
-.modal {
+  margin: auto;
   background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 520px;
   max-height: 85vh;
+  height: fit-content;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 50px rgba(0,0,0,.28);
   animation: slideUp .2s ease;
+  z-index: var(--z-modal);
 }
 .modal-header {
   display: flex;
@@ -397,7 +392,6 @@ tbody tr:hover { background: var(--color-bg); }
   border-radius: var(--radius-sm);
 }
 .modal-close:hover { background: var(--color-bg-alt); }
-@keyframes fadeIn { from { opacity: 0; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } }
 
 /* ─── Toast ────────────────────────────────────────── */
@@ -723,12 +717,20 @@ tbody tr:hover { background: var(--color-bg); }
   padding: 16px;
   background: #fff;
   color: #000;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
 }
-.receipt-logo { text-align: center; margin-bottom: 8px; }
-.receipt-logo img {
-  max-width: 120px;
-  max-height: 64px;
-  object-fit: contain;
+.receipt-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150px;
+  height: auto;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
 }
 .receipt-header { text-align: center; margin-bottom: 10px; }
 .receipt-header h2 { font-size: 14px; font-weight: 700; }
@@ -827,16 +829,87 @@ tbody tr:hover { background: var(--color-bg); }
 .hours-times .input-group { width: 130px; }
 .hours-times .input { padding: 7px 10px; }
 
-/* ─── Settings: logo preview ──────────────────────── */
-.logo-preview {
-  margin-top: 10px;
+/* ─── Settings: modern menu + panels ───────────────── */
+.settings-menu {
+  max-width: 560px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  background: #fff;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  text-align: left;
+  transition: background .12s ease;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row:hover { background: var(--color-bg); }
+.settings-row:active { background: var(--color-primary-light); }
+.settings-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.settings-label {
+  flex: 1;
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+.settings-chevron {
+  color: var(--color-text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.settings-panel { max-width: 720px; }
+.settings-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.settings-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+}
+.settings-panel-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  margin: 0;
+}
+.settings-panel-title .settings-icon { font-size: 22px; }
+
+/* ─── Settings: receipt logo card ──────────────────── */
+.receipt-card-logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   padding: 12px;
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg);
-  text-align: center;
+  flex-wrap: wrap;
 }
-.logo-preview img { max-width: 160px; max-height: 90px; object-fit: contain; }
+.receipt-card-logo img {
+  width: 72px;
+  height: auto;
+  flex-shrink: 0;
+}
+.receipt-card-logo code { background: transparent; padding: 0; color: var(--color-primary); }
 
 /* ─── POS: review / checkout summary ──────────────── */
 .review-summary {

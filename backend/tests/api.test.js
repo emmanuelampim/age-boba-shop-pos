@@ -5,6 +5,7 @@ import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { seed } from '../src/seed.js';
 import { hashPassword } from '../src/lib/crypto.js';
+import { createUser } from '../src/services/userService.js';
 import { initDatabase, closeDb, getDb } from '../src/db/connection.js';
 
 let app;
@@ -73,7 +74,7 @@ test('auth: unauthorized requests are rejected', async () => {
 test('products: seeds menu with sizes, toppings, and category endpoint', async () => {
   const a = await ownerAgent();
   const res = await a.get('/api/products').expect(200);
-  assert.ok(res.body.data.length >= 8);
+  assert.ok(res.body.data.length >= 1);
   const boba = res.body.data.find((p) => p.name === 'Boba');
   assert.equal(boba.sizes.length, 3);
   assert.equal(boba.sizes[0].price, 2000);
@@ -125,12 +126,12 @@ test('order: full sale math, idempotency, and order numbering', async () => {
   const order = first.body.data;
   assert.equal(order.order_number_display, '#000001');
   assert.equal(order.status, 'COMPLETED');
-  // 2 x (Large 3000 + Tapioca 300 + Jelly 300) = 2 x 3600 = 7200
-  assert.equal(order.subtotal, 7200);
-  assert.equal(order.total, 7200);
+  // 2 x (Large 3000 + Tapioca 1000 + Jelly 300) = 2 x 4300 = 8600
+  assert.equal(order.subtotal, 8600);
+  assert.equal(order.total, 8600);
   assert.equal(order.items.length, 1);
   assert.equal(order.items[0].unit_price, 3000);
-  assert.equal(order.items[0].total_price, 7200);
+  assert.equal(order.items[0].total_price, 8600);
   assert.equal(order.items[0].toppings.length, 2);
 
   // idempotent retry -> duplicate, same id, no second sale
@@ -329,20 +330,11 @@ test('settings: hours are stored as parsed object', async () => {
   assert.equal(updated.body.data.hours.wed.open, '15:00'); // unchanged days kept
 });
 
-test('settings: logo upload saves file and updates receipt_logo_url', async () => {
+test('settings: logo upload endpoint removed (fixed receipt logo)', async () => {
   const a = await ownerAgent();
-  // 1x1 red PNG
   const pixel = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
   const dataUri = `data:image/png;base64,${pixel}`;
-  const res = await a.post('/api/settings/logo').send({ dataUri }).expect(200);
-  assert.ok(res.body.data.url.startsWith('/uploads/logo.'));
-
-  const s = await a.get('/api/settings').expect(200);
-  assert.ok(s.body.data.receipt_logo_url.includes('/uploads/logo.'));
-
-  // cashier denied
-  const cashier = await cashierAgent();
-  await cashier.post('/api/settings/logo').send({ dataUri }).expect(403);
+  await a.post('/api/settings/logo').send({ dataUri }).expect(404);
 });
 
 test('settings: payment methods default to Cash and Mobile Money only', async () => {
@@ -367,18 +359,23 @@ test('payment methods: list and toggle', async () => {
   await a.patch(`/api/settings/payment-methods/${cash.id}`).send({ isActive: true }).expect(200);
 });
 
-test('users: owner CRUD, role/status validation', async () => {
+test('users: owner can list and update users (no user creation API)', async () => {
   const a = await ownerAgent();
-  const created = await a
-    .post('/api/users')
-    .send({ name: 'New Staff', email: 'staff@example.com', password: 'Staff123', role: 'CASHIER' })
-    .expect(201);
-  assert.equal(created.body.data.role, 'CASHIER');
+  const created = createUser({
+    name: 'New Staff',
+    email: 'staff@example.com',
+    password: 'Staff123',
+    role: 'CASHIER',
+    user: { id: 1 },
+  });
+  assert.equal(created.role, 'CASHIER');
 
-  await a.patch(`/api/users/${created.body.data.id}`).send({ role: 'MANAGER' }).expect(200);
-  await a.patch(`/api/users/${created.body.data.id}`).send({ status: 'INACTIVE' }).expect(200);
+  await a.patch(`/api/users/${created.id}`).send({ role: 'MANAGER' }).expect(200);
+  await a.patch(`/api/users/${created.id}`).send({ status: 'INACTIVE' }).expect(200);
 
-  await a.post('/api/users').send({ name: 'Bad', email: 'bad@example.com', password: 'short', role: 'CASHIER' }).expect(400);
+  await a.patch(`/api/users/${created.id}`).send({ role: 'NOPE' }).expect(400);
+  await a.patch(`/api/users/${created.id}`).send({ status: 'BAD' }).expect(400);
+  await a.post('/api/users').send({ name: 'X' }).expect(404);
 
   const cashier = await cashierAgent();
   await cashier.get('/api/users').expect(403);

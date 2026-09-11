@@ -21,8 +21,11 @@ export async function seed(db = getDb()) {
     'email = ? COLLATE NOCASE',
     ['mavisampim@gmail.com'],
     'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-    ['Owner', 'mavisampim@gmail.com', hashPassword('Owner@123'), 'OWNER'],
+    ['Mavis Ampim', 'mavisampim@gmail.com', hashPassword('Owner@123'), 'OWNER'],
   );
+  db.prepare(
+    "UPDATE users SET name = ? WHERE email = ? COLLATE NOCASE AND role = 'OWNER' AND name != ?",
+  ).run('Mavis Ampim', 'mavisampim@gmail.com', 'Mavis Ampim');
 
   const branchId = insertOrSkip(
     db,
@@ -85,6 +88,7 @@ export async function seed(db = getDb()) {
       ['Popping Boba', 'portion', 100, 10, 'POPPING_BOBA'],
       ['Jelly', 'portion', 100, 10, 'JELLY'],
       ['Pudding', 'portion', 100, 10, 'PUDDING'],
+      ['Oreo Biscuit', 'portion', 100, 10, 'OREO_BISCUIT'],
     ];
     for (const [name, unit, qty, threshold, key] of defs) {
       const id = insertOrSkip(
@@ -110,14 +114,14 @@ export async function seed(db = getDb()) {
       'INSERT INTO categories (name, code) VALUES (?, ?)',
       [name, name.toLowerCase().replace(/[^a-z0-9]+/g, '_')],
     );
-  const drinksCat = catId('Drinks');
-  const snacksCat = catId('Snacks');
-  const bakedCat = catId('Baked');
-
+const drinksCat = catId('Drinks');
+  
   {
     const defs = {
-      Tapioca: [300, toppingItems.TAPIOCA],
+      Tapioca: [1000, toppingItems.TAPIOCA],
       'Popping Boba': [400, toppingItems.POPPING_BOBA],
+      'Boba Poppings': [1000, toppingItems.POPPING_BOBA],
+      'Oreo Biscuit': [1000, toppingItems.OREO_BISCUIT],
       Jelly: [300, toppingItems.JELLY],
       Pudding: [500, toppingItems.PUDDING],
     };
@@ -129,6 +133,11 @@ export async function seed(db = getDb()) {
         [name],
         'INSERT INTO toppings (name, price, inventory_item_id) VALUES (?, ?, ?)',
         [name, price, invId ?? null],
+      );
+      db.prepare('UPDATE toppings SET price = ?, inventory_item_id = ? WHERE name = ?').run(
+        price,
+        invId ?? null,
+        name,
       );
     }
   }
@@ -143,28 +152,46 @@ export async function seed(db = getDb()) {
       ],
       toppings: ['Tapioca', 'Popping Boba', 'Jelly', 'Pudding'],
     },
-    'Fruit Juice': {
-      cat: drinksCat,
-      sizes: [
-        ['Small', 'SMALL', bp(15), cupItems.SMALL_CUP],
-        ['Medium', 'MEDIUM', bp(20), cupItems.MEDIUM_CUP],
-        ['Large', 'LARGE', bp(25), cupItems.LARGE_CUP],
-      ],
-    },
-    Yoghurt: {
-      cat: drinksCat,
-      sizes: [
-        ['Small', 'SMALL', bp(15), cupItems.SMALL_CUP],
-        ['Medium', 'MEDIUM', bp(20), cupItems.MEDIUM_CUP],
-        ['Large', 'LARGE', bp(25), cupItems.LARGE_CUP],
-      ],
-    },
-    Popcorn: { cat: snacksCat, price: bp(10) },
-    Pie: { cat: bakedCat, price: bp(15) },
-    Muffin: { cat: bakedCat, price: bp(10) },
-    Samosa: { cat: snacksCat, price: bp(5) },
-    'Spring Onions': { cat: snacksCat, price: bp(5) },
   };
+
+  const bobaCupSizes = [
+    ['Small', 'SMALL', bp(30), cupItems.SMALL_CUP],
+    ['Medium', 'MEDIUM', bp(40), cupItems.MEDIUM_CUP],
+    ['Large', 'LARGE', bp(50), cupItems.LARGE_CUP],
+  ];
+  const bobaToppings = ['Tapioca', 'Boba Poppings', 'Oreo Biscuit'];
+  const cat = {
+    taroDelight: catId('TARO DELIGHT BOBA'),
+    fruitGreen: catId('FRUIT GREEN TEA BOBA'),
+    signature: catId('SIGNATURE MILK TEA BOBA'),
+    fruitMilk: catId('FRUIT MILK TEA BOBA'),
+    fruitCheese: catId('FRUIT TEA CHEESE BOBA'),
+  };
+  Object.assign(products, {
+    'TARO OREO MILK TEA BOBA': { cat: cat.taroDelight, sizes: bobaCupSizes, toppings: bobaToppings },
+    'TARO VANILLA MILK TEA BOBA': { cat: cat.taroDelight, sizes: bobaCupSizes, toppings: bobaToppings },
+    'TARO COCONUT MILK TEA BOBA': { cat: cat.taroDelight, sizes: bobaCupSizes, toppings: bobaToppings },
+    'MANGO GREEN MILK TEA BOBA': { cat: cat.fruitGreen, sizes: bobaCupSizes, toppings: bobaToppings },
+    'STRAWBERRY GREEN MILK TEA BOBA': { cat: cat.fruitGreen, sizes: bobaCupSizes, toppings: bobaToppings },
+    'PEACH GREEN TEA BOBA': { cat: cat.fruitGreen, sizes: bobaCupSizes, toppings: bobaToppings },
+    'PASSION GREEN TEA BOBA': { cat: cat.fruitGreen, sizes: bobaCupSizes, toppings: bobaToppings },
+    'STRAWBERRY MILK TEA BOBA': { cat: cat.fruitGreen, sizes: bobaCupSizes, toppings: bobaToppings },
+    'BROWN SUGAR MILK TEA BOBA': { cat: cat.signature, sizes: bobaCupSizes, toppings: bobaToppings },
+    'CARAMEL MILK TEA BOBA': { cat: cat.signature, sizes: bobaCupSizes, toppings: bobaToppings },
+    'COCONUT MILK TEA BOBA': { cat: cat.signature, sizes: bobaCupSizes, toppings: bobaToppings },
+    'VANILLA SILK MILK TEA BOBA': { cat: cat.signature, sizes: bobaCupSizes, toppings: bobaToppings },
+    'COCONUT OREO MILK TEA BOBA': { cat: cat.signature, sizes: bobaCupSizes, toppings: bobaToppings },
+    'OREO CRUMBLE MILK TEA BOBA': { cat: cat.signature, sizes: bobaCupSizes, toppings: bobaToppings },
+    'JASMINE MILK TEA BOBA': { cat: cat.signature, sizes: bobaCupSizes, toppings: bobaToppings },
+    'EXPRESSO MILK TEA BOBA': { cat: cat.signature, sizes: bobaCupSizes, toppings: bobaToppings },
+    'GRAPE MILK TEA BOBA': { cat: cat.fruitMilk, sizes: bobaCupSizes, toppings: bobaToppings },
+    'MANGO MILK TEA BOBA': { cat: cat.fruitMilk, sizes: bobaCupSizes, toppings: bobaToppings },
+    'BLUEBERRY MILK TEA BOBA': { cat: cat.fruitMilk, sizes: bobaCupSizes, toppings: bobaToppings },
+    'MANGO CHEESE TEA BOBA': { cat: cat.fruitCheese, sizes: bobaCupSizes, toppings: bobaToppings },
+    'STRAWBERRY CHEESE TEA BOBA': { cat: cat.fruitCheese, sizes: bobaCupSizes, toppings: bobaToppings },
+    'PEACH CHEESE TEA BOBA': { cat: cat.fruitCheese, sizes: bobaCupSizes, toppings: bobaToppings },
+    'PASSION CHEESE TEA BOBA': { cat: cat.fruitCheese, sizes: bobaCupSizes, toppings: bobaToppings },
+  });
 
   for (const [name, def] of Object.entries(products)) {
     const productId = insertOrSkip(

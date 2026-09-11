@@ -6,9 +6,8 @@ import {
   getPaymentMethods,
   createPaymentMethod,
   updatePaymentMethod,
-  uploadLogo,
 } from '../services/settingsService.js';
-import { listUsers, createUser, updateUser, ROLES } from '../services/userService.js';
+import { listUsers, updateUser, ROLES } from '../services/userService.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { sendError, ok, badRequest } from '../lib/http.js';
 
@@ -27,19 +26,6 @@ export function createRouter() {
   router.patch('/settings', requireRole('OWNER'), (req, res, next) => {
     try {
       return ok(res, updateSettings(req.body ?? {}, req.user));
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.post('/settings/logo', requireRole('OWNER'), (req, res, next) => {
-    try {
-      const { dataUri } = req.body ?? {};
-      if (typeof dataUri !== 'string' || !dataUri) {
-        return sendError(res, badRequest('VALIDATION_ERROR', 'dataUri is required.'));
-      }
-      const result = uploadLogo({ dataUri, user: req.user });
-      return ok(res, result);
     } catch (err) {
       next(err);
     }
@@ -89,25 +75,6 @@ export function createRouter() {
       return ok(res, listUsers());
     } catch (err) {
       return sendError(res, err);
-    }
-  });
-
-  router.post('/users', requireRole('OWNER'), (req, res, next) => {
-    try {
-      const { name, email, password, role } = req.body ?? {};
-      if (typeof name !== 'string' || !name.trim()) {
-        return sendError(res, badRequest('VALIDATION_ERROR', 'name is required.'));
-      }
-      if (typeof email !== 'string' || !email.trim()) {
-        return sendError(res, badRequest('VALIDATION_ERROR', 'email is required.'));
-      }
-      if (!ROLES.includes(role)) {
-        return sendError(res, badRequest('VALIDATION_ERROR', `role must be one of: ${ROLES.join(', ')}.`));
-      }
-      const user = createUser({ name, email, password, role, user: req.user });
-      return ok(res, user, 201);
-    } catch (err) {
-      next(err);
     }
   });
 
