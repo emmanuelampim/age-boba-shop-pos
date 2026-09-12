@@ -181,8 +181,10 @@ export default function NewSale() {
     setPrinting(true)
     try {
       await api.printReceipt(buildReceiptText(receipt, settings))
+      console.info('[print] Receipt sent via direct printer (spooler/raw ESC/POS).')
       addToast('Receipt sent to printer.', 'success')
-    } catch {
+    } catch (e) {
+      console.warn('[print] Direct printing unavailable, using browser print preview:', e)
       addToast('Direct printing unavailable — used browser print preview.', 'info')
       window.print()
     } finally {

@@ -32,7 +32,9 @@
   --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --receipt-width: 80mm;
+  /* 72mm = the XP-90's printable width; the 80mm paper roll includes an
+     unprintable margin on each side, so the receipt must be narrower. */
+  --receipt-width: 72mm;
   --z-modal: 1000;
   --z-toast: 1100;
 }
@@ -824,6 +826,9 @@ tbody tr:hover { background: var(--color-bg); }
   .receipt-watermark { display: none !important; }
   .receipt-header, .receipt-footer { text-align: center; }
   .receipt-header p, .receipt-sub, .receipt-footer { color: #000; }
+  /* Print darkness is also governed by the printer's own Density setting
+     (currently 5 of 8 max). If the text is still too light after these CSS
+     changes, raise Density to 7-8 in the XP-90's configuration utility. */
   .receipt-total { font-weight: 800; }
   .receipt-item, .receipt-line {
     break-inside: avoid;
