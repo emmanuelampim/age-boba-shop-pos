@@ -37,7 +37,7 @@ export default function NewSale() {
   const [notes, setNotes] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [paymentRef, setPaymentRef] = useState('')
-  const [momoReceived, setMomoReceived] = useState(false)
+  
   const [settings, setSettings] = useState({})
   const [requestId, setRequestId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -142,7 +142,6 @@ export default function NewSale() {
         notes,
         customerPhone: customerPhone.trim() || undefined,
         paymentRef: last4 || undefined,
-        momoConfirmed: isMoMo ? momoReceived : false,
         items: items.map((i) => ({
           productId: i.productId,
           ...(i.sizeId ? { sizeId: i.sizeId } : {}),
@@ -167,7 +166,6 @@ export default function NewSale() {
       setNotes('')
       setCustomerPhone('')
       setPaymentRef('')
-      setMomoReceived(false)
       setReceipt(order)
     } catch (e) {
       addToast(e.message, 'error')
@@ -185,7 +183,6 @@ export default function NewSale() {
   const isMoMo = payMethod === momoPay
   const last4 = paymentRef.replace(/\D/g, '').slice(0, 4)
   const momoMissingContact = isMoMo && !customerPhone.trim() && !last4
-  const momoMissingConfirmed = isMoMo && !momoReceived
   const momoPreviewRef = isMoMo && last4 ? `****${last4}` : ''
 
   const draftOrder = {
@@ -205,7 +202,7 @@ export default function NewSale() {
     payment_method: selectedPayName || '—',
     customer_phone: customerPhone.trim() || '',
     payment_ref: momoPreviewRef,
-    momo_status: isMoMo && momoReceived ? 'MANUAL_CONFIRMATION' : '',
+    momo_status: isMoMo ? 'MANUAL_CONFIRMATION' : '',
     user: { name: user?.name },
   }
 
@@ -457,22 +454,6 @@ export default function NewSale() {
             {momoMissingContact && (
               <div className="login-error mt-sm" role="alert">Enter the customer&apos;s phone number or the last 4 digits of the transaction.</div>
             )}
-            <label className="flex gap-sm mt-sm" htmlFor="momo-received">
-              <input
-                id="momo-received"
-                type="checkbox"
-                checked={momoReceived}
-                onChange={(e) => setMomoReceived(e.target.checked)}
-                style={{ marginTop: 3, flexShrink: 0 }}
-              />
-              <span>
-                I confirm that the MoMo payment of {c(displayTotal)} has been received
-                (checked on the shop&apos;s MoMo device)
-              </span>
-            </label>
-            {momoMissingConfirmed && (
-              <div className="login-error mt-sm" role="alert">Confirm that the MoMo payment was received before continuing.</div>
-            )}
           </div>
         )}
 
@@ -487,7 +468,7 @@ export default function NewSale() {
 
         <button
           className="btn btn-primary btn-lg w-full mt-md"
-          disabled={discountCents > subtotal || !payMethod || momoMissingContact || momoMissingConfirmed}
+          disabled={discountCents > subtotal || !payMethod || momoMissingContact}
           onClick={() => { setCheckoutOpen(false); setReviewOpen(true) }}
         >
           Review order & receipt
@@ -502,9 +483,7 @@ export default function NewSale() {
             ? 'Select a payment method before confirming.'
             : momoMissingContact
               ? 'Enter the customer phone number or the last 4 digits of the MoMo transaction before confirming.'
-              : momoMissingConfirmed
-                ? 'Confirm that the MoMo payment was received before confirming.'
-                : discountCents > subtotal
+              : discountCents > subtotal
                   ? 'Fix the discount before confirming.'
                   : 'Confirming finalizes the sale and allows printing. Double-check items, prices and payment.'}
         </div>
@@ -514,7 +493,7 @@ export default function NewSale() {
           </button>
           <button
             className="btn btn-success btn-lg w-full"
-            disabled={submitting || !payMethod || momoMissingContact || momoMissingConfirmed || discountCents > subtotal}
+            disabled={submitting || !payMethod || momoMissingContact || discountCents > subtotal}
             onClick={completeSale}
           >
             {submitting ? 'Confirming sale…' : `Confirm sale · ${c(displayTotal)}`}

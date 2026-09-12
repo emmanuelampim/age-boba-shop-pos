@@ -189,9 +189,6 @@ export function validateOrderPayload(input) {
       errs.push('paymentRef must be 64 characters or fewer.');
     }
   }
-  if (input.momoConfirmed !== undefined && typeof input.momoConfirmed !== 'boolean') {
-    errs.push('momoConfirmed must be a boolean.');
-  }
   return errs.join(' ') || null;
 }
 
@@ -204,7 +201,6 @@ export function createOrder({
   items,
   customerPhone = null,
   paymentRef = null,
-  momoConfirmed = false,
   user,
 }) {
   const result = transaction(() => {
@@ -246,15 +242,6 @@ export function createOrder({
           );
         }
         storedRef = `****${ref}`;
-      }
-      // The cashier must manually confirm they saw the MoMo payment arrive on
-      // the shop's MoMo device. There is no automatic provider verification.
-      if (momoConfirmed !== true) {
-        throw new AppError(
-          400,
-          'MOMO_CONFIRMATION_REQUIRED',
-          'Confirm that the Mobile Money payment was received before finalizing the sale.',
-        );
       }
       momoFlag = 1;
       momoStatus = 'MANUAL_CONFIRMATION';

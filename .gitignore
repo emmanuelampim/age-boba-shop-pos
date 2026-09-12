@@ -3,6 +3,7 @@
 
 # Build output (backend Windows bundle is rebuilt via: cd backend && npm run build:win)
 backend/dist/
+boba-pos-release.zip
 
 # Frontend build output (dev only; prod site is built during deploy)
 frontend/dist/

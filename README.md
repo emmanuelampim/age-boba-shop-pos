@@ -171,7 +171,6 @@ Common response shapes:
   "notes": "",
   "customerPhone": "0241234567",         // REQUIRED for Mobile Money (either this…)
   "paymentRef": "4821",                  // …or the LAST 4 digits of the MoMo transaction (optional)
-  "momoConfirmed": true,                 // REQUIRED for Mobile Money: manual confirmation the payment arrived
   "items": [
     { "productId": 1, "sizeId": 3, "quantity": 2,
       "toppingIds": [1, 2] }
@@ -181,7 +180,7 @@ Common response shapes:
 
 The server looks up **current** prices, validates availability/stock, computes subtotal/discount/total, snapshots names+prices, deducts inventory, generates `#000…` order number, and commits atomically. Duplicate `requestId` → returns the original order with `"duplicate": true` (HTTP 200), never a second sale.
 
-**Mobile Money**: when the active payment method has `code === 'MOMO'`, the server **requires** a traceable reference — either `customerPhone` (a valid Ghana phone, accepted in formats like `0241234567`, `+233 24 123 4567` — stored normalized as `0241234567`) or `paymentRef` (the **last 4 digits only** of the MoMo transaction; anything else → `INVALID_PAYMENT_REF`). The sale also **requires `momoConfirmed: true`** — an explicit manual confirmation by the cashier that the payment was seen on the shop's MoMo device (`MOMO_CONFIRMATION_REQUIRED` otherwise). There is **no automatic provider verification**; the stored status is `MANUAL_CONFIRMATION`. Only the last 4 digits are kept and printed, masked as `****4821` (privacy: a full reference is never stored or printed). Each MoMo sale writes a `MOMO_PAYMENT_CONFIRMED` audit entry. The same info rides through the receipt, the audit log, and the spreadsheet export (`Momo status`). Cash sales carry none of these fields.
+**Mobile Money**: when the active payment method has `code === 'MOMO'`, the server **requires** a traceable reference — either `customerPhone` (a valid Ghana phone, accepted in formats like `0241234567`, `+233 24 123 4567` — stored normalized as `0241234567`) or `paymentRef` (the **last 4 digits only** of the MoMo transaction; anything else → `INVALID_PAYMENT_REF`). There is **no automatic provider verification**; the cashier checks the shop's MoMo device and finalizes, and the stored status is `MANUAL_CONFIRMATION`. Only the last 4 digits are kept and printed, masked as `****4821` (privacy: a full reference is never stored or printed). Each MoMo sale writes a `MOMO_PAYMENT_CONFIRMED` audit entry. The same info rides through the receipt, the audit log, and the spreadsheet export (`Momo status`). Cash sales carry none of these fields.
 
 ### Inventory adjust example
 

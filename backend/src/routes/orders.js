@@ -34,7 +34,6 @@ export function createRouter() {
         notes: input.notes ?? null,
         customerPhone: input.customerPhone ?? null,
         paymentRef: input.paymentRef ?? null,
-        momoConfirmed: input.momoConfirmed ?? false,
         items: input.items,
         user: req.user,
       });
