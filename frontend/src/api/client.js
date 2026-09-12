@@ -63,6 +63,10 @@ export function del(path) {
   return request(path, { method: 'DELETE' })
 }
 
+export function printReceipt(text) {
+  return post('/print', { text })
+}
+
 export async function downloadFile(path, params, filename) {
   let url = `${API_BASE}${path}`
   if (params) {

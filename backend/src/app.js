@@ -15,6 +15,7 @@ import * as dashboardRoutes from './routes/dashboard.js';
 import * as settingsRoutes from './routes/settings.js';
 import * as shutdownRoutes from './routes/shutdown.js';
 import * as exportRoutes from './routes/export.js';
+import * as printRoutes from './routes/print.js';
 import { logger } from './lib/logger.js';
 
 function cookieParser(req, _res, next) {
@@ -78,6 +79,7 @@ export async function createApp({ runMigrationsOnStart = true } = {}) {
   app.use('/api/dashboard', dashboardRoutes.createRouter());
   app.use('/api', settingsRoutes.createRouter());
   app.use('/api', exportRoutes.createRouter());
+  app.use('/api', printRoutes.createRouter());
 
   // Only expose the self-shutdown endpoint on real (non-test) deployments.
   if (!config.testing) {

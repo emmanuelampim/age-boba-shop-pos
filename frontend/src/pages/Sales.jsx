@@ -11,6 +11,7 @@ import Skeleton from '../components/ui/Skeleton'
 import ReceiptView from '../components/ReceiptView'
 import { useToast } from '../store/toast'
 import { useAuth } from '../store/auth'
+import { buildReceiptText } from '../lib/receiptText'
 
 const STATUSES = ['ALL', 'COMPLETED', 'CANCELLED', 'REFUNDED']
 
@@ -34,6 +35,21 @@ export default function Sales() {
   const [confirm, setConfirm] = useState(null)
   const [currencySymbol, setCurrencySymbol] = useState('GH₵')
   const [exporting, setExporting] = useState(false)
+  const [printing, setPrinting] = useState(false)
+
+  const printReceipt = async () => {
+    if (!detail) return
+    setPrinting(true)
+    try {
+      await api.printReceipt(buildReceiptText(detail, settings))
+      addToast('Receipt sent to printer.', 'success')
+    } catch {
+      addToast('Direct printing unavailable — using browser print preview.', 'info')
+      window.print()
+    } finally {
+      setPrinting(false)
+    }
+  }
 
   const downloadReport = () => {
     setExporting(true)
@@ -220,7 +236,9 @@ export default function Sales() {
                   <button className="btn btn-danger w-full" onClick={() => setConfirm({ action: 'refund', reason: '' })}>Refund order</button>
                 </div>
               )}
-              <button className="btn btn-primary w-full mt-sm" onClick={() => window.print()}>🖨️ Print receipt</button>
+              <button className="btn btn-primary w-full mt-sm" onClick={printReceipt} disabled={printing}>
+                {printing ? '🖨️ Printing…' : '🖨️ Print receipt'}
+              </button>
             </div>
           </>
         )}
