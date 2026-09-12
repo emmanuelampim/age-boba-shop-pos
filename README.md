@@ -169,8 +169,9 @@ Common response shapes:
   "paymentMethodId": 1,
   "discount": 350,                       // GH₵3.50 in pesewas (server-validated, not trusted blindly)
   "notes": "",
-  "customerPhone": "0241234567",         // REQUIRED for Mobile Money payment (either this…)
-  "paymentRef": "MFR123456789",          // …or the transaction number. Optional for cash.
+  "customerPhone": "0241234567",         // REQUIRED for Mobile Money (either this…)
+  "paymentRef": "4821",                  // …or the LAST 4 digits of the MoMo transaction (optional)
+  "momoConfirmed": true,                 // REQUIRED for Mobile Money: manual confirmation the payment arrived
   "items": [
     { "productId": 1, "sizeId": 3, "quantity": 2,
       "toppingIds": [1, 2] }
@@ -180,7 +181,7 @@ Common response shapes:
 
 The server looks up **current** prices, validates availability/stock, computes subtotal/discount/total, snapshots names+prices, deducts inventory, generates `#000…` order number, and commits atomically. Duplicate `requestId` → returns the original order with `"duplicate": true` (HTTP 200), never a second sale.
 
-**Mobile Money**: when the active payment method has `code === 'MOMO'`, the server **requires** a traceable reference — either `customerPhone` (a valid Ghana phone, accepted in formats like `0241234567`, `+233 24 123 4567` — stored normalized as `0241234567`) or `paymentRef` (the transaction number from the MoMo prompt). Both are stored on the order, shown on the receipt, and included in the spreadsheet export. Payment methods are configurable in Settings → Payment methods; only methods with `code = 'MOMO'` enforce this.
+**Mobile Money**: when the active payment method has `code === 'MOMO'`, the server **requires** a traceable reference — either `customerPhone` (a valid Ghana phone, accepted in formats like `0241234567`, `+233 24 123 4567` — stored normalized as `0241234567`) or `paymentRef` (the **last 4 digits only** of the MoMo transaction; anything else → `INVALID_PAYMENT_REF`). The sale also **requires `momoConfirmed: true`** — an explicit manual confirmation by the cashier that the payment was seen on the shop's MoMo device (`MOMO_CONFIRMATION_REQUIRED` otherwise). There is **no automatic provider verification**; the stored status is `MANUAL_CONFIRMATION`. Only the last 4 digits are kept and printed, masked as `****4821` (privacy: a full reference is never stored or printed). Each MoMo sale writes a `MOMO_PAYMENT_CONFIRMED` audit entry. The same info rides through the receipt, the audit log, and the spreadsheet export (`Momo status`). Cash sales carry none of these fields.
 
 ### Inventory adjust example
 
@@ -214,6 +215,7 @@ Frontend: `npm run build` (runs Vite production build) and `npm run lint`.
 ## Backup strategy
 
 - **What**: the SQLite file `backend/data/pos.db`. It is written via atomic replace, so the **database is a single file** — no `-wal`/`-shm` siblings.
+- **Business day**: every order stores an exact `created_at` timestamp **plus** a `business_date` (Ghana local calendar day), so daily reports always keep days separate and survive app/computer restarts. The dashboard's "today" figures (including the Cash vs MoMo breakdown in `payment_breakdown`) are always calculated live from the stored orders — no duplicated totals that can drift.
 - **How often**: every day, automatically. See below — but the rule of thumb stays: `cp pos.db backups/pos-$(date +%F).db` (with sql.js the file is consistent even if copied mid-run — it reflects the last committed write; stopping the server first gives the freshest copy).
 - **Where**: copy snapshots to the same host, then off-site (cloud object storage / NAS / USB for the Windows 7 box). Keep daily for 30 days, monthly for 12 months.
 - **Restore**: stop the app, `cp` the backup over `pos.db`, start the app, verify `GET /api/health` and recent order counts.
@@ -230,6 +232,7 @@ The POS keeps its own daily copies automatically (no command lines):
 - **USB pendrive**: if a USB stick is plugged in (or `USB_BACKUP_DIR` is set to a fixed folder), those same two files are copied into a `BobaPOS Backups` folder on the drive automatically at close-of-day.
 - **Safety-net scheduled task** (`windows\install_backup.cmd` on the Win7 box): copies the database locally + to USB every night at 11 PM even if nobody closed for the day (`windows\backup_pos.cmd`, via Task Scheduler `\backup_pos.vbs`).
 - **Download any range**: the Sales page has a "Download report (Excel/CSV)" button (`GET /api/export/sales?from=&to=`) that returns the matching rows as a spreadsheet on demand.
+- **Controlled restore** (`windows\restore_backup.cmd` on Win7): with the server stopped, lists the daily backups, asks which date to restore, **automatically keeps a safety copy of the current database first** (`pos-before-restore-<time>.db`), restores, and logs the action in `backups/restore-log.txt`. Only the owner should run it — there is no one-click restore button in the app.
 
 ---
 

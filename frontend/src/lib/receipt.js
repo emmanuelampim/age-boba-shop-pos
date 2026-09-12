@@ -36,6 +36,7 @@ export function buildReceiptLines(order, settings) {
     paymentMethod: order.payment_method || "—",
     customerPhone: order.customer_phone || "",
     paymentRef: order.payment_ref || "",
+    momoStatus: order.momo_status || "",
     servedBy: order.user?.name,
     footer: settings.receipt_footer,
     currencySymbol,

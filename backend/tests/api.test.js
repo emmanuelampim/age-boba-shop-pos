@@ -258,7 +258,7 @@ test('validation: empty basket and duplicate toppings rejected', async () => {
   assert.equal(res.body.error.code, 'VALIDATION_ERROR');
 });
 
-test('orders: Mobile Money requires a customer phone or transaction number', async () => {
+test('orders: Mobile Money requires contact and manual confirmation', async () => {
   const a = await ownerAgent();
   const boba = await listBoba(a);
   const sizeId = boba.sizes.find((s) => s.code === 'LARGE').id;
@@ -277,26 +277,65 @@ test('orders: Mobile Money requires a customer phone or transaction number', asy
     .expect(400);
   assert.equal(badPhone.body.error.code, 'VALIDATION_ERROR');
 
-  // MoMo with a phone is accepted and normalized.
+  // Last-4-digits must be exactly 4 digits.
+  const shortRef = await a
+    .post('/api/orders')
+    .send({ requestId: `e2e-momo-short-${Date.now()}`, branchId: 1, paymentMethodId: 2, paymentRef: '123', momoConfirmed: true, items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .expect(400);
+  assert.equal(shortRef.body.error.code, 'INVALID_PAYMENT_REF');
+
+  const letterRef = await a
+    .post('/api/orders')
+    .send({ requestId: `e2e-momo-letters-${Date.now()}`, branchId: 1, paymentMethodId: 2, paymentRef: 'ab12', momoConfirmed: true, items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .expect(400);
+  assert.equal(letterRef.body.error.code, 'INVALID_PAYMENT_REF');
+
+  // Payment-ref without manual confirmation is rejected.
+  const noConfirm = await a
+    .post('/api/orders')
+    .send({ requestId: `e2e-momo-noconfirm-${Date.now()}`, branchId: 1, paymentMethodId: 2, paymentRef: '4821', items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .expect(400);
+  assert.equal(noConfirm.body.error.code, 'MOMO_CONFIRMATION_REQUIRED');
+
+  // MoMo with phone + last-4 + confirmation is accepted; ref is masked and stored.
   const withPhone = await a
     .post('/api/orders')
-    .send({ requestId: `e2e-momo-phone-${Date.now()}`, branchId: 1, paymentMethodId: 2, customerPhone: '+233 24 123 4567', items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .send({ requestId: `e2e-momo-phone-${Date.now()}`, branchId: 1, paymentMethodId: 2, customerPhone: '+233 24 123 4567', paymentRef: '4821', momoConfirmed: true, items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
     .expect(201);
   assert.equal(withPhone.body.data.customer_phone, '0241234567');
+  assert.equal(withPhone.body.data.payment_ref, '****4821');
+  assert.equal(withPhone.body.data.momo_confirmed, 1);
+  assert.equal(withPhone.body.data.momo_status, 'MANUAL_CONFIRMATION');
+  assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(withPhone.body.data.business_date));
 
-  // MoMo with a transaction number (no phone) is accepted.
+  // The manual confirmation is recorded in the audit log.
+  const auditRow = getDb()
+    .prepare(
+      `SELECT action, details FROM audit_logs
+       WHERE action = 'MOMO_PAYMENT_CONFIRMED' AND entity_id = ?`,
+    )
+    .get(String(withPhone.body.data.id));
+  assert.ok(auditRow, 'MOMO_PAYMENT_CONFIRMED audit entry missing');
+  assert.ok(auditRow.details.includes('****4821'));
+
+  // MoMo with last-4 only (no phone) is accepted when confirmed.
   const withRef = await a
     .post('/api/orders')
-    .send({ requestId: `e2e-momo-ref-${Date.now()}`, branchId: 1, paymentMethodId: 2, paymentRef: 'MFR999999999', items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .send({ requestId: `e2e-momo-ref-${Date.now()}`, branchId: 1, paymentMethodId: 2, paymentRef: '9999', momoConfirmed: true, items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
     .expect(201);
-  assert.equal(withRef.body.data.payment_ref, 'MFR999999999');
+  assert.equal(withRef.body.data.payment_ref, '****9999');
+  assert.equal(withRef.body.data.momo_status, 'MANUAL_CONFIRMATION');
 
-  // Cash has no contact requirement.
+  // Cash has no MoMo fields and no contact requirement.
   const cash = await a
     .post('/api/orders')
     .send({ requestId: `e2e-cash-${Date.now()}`, branchId: 1, paymentMethodId: 1, items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
     .expect(201);
   assert.equal(cash.body.data.customer_phone, null);
+  assert.equal(cash.body.data.payment_ref, null);
+  assert.equal(cash.body.data.momo_confirmed, 0);
+  assert.equal(cash.body.data.momo_status, null);
+  assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(cash.body.data.business_date));
 });
 
 test('inventory: restock, waste rejection, history', async () => {
@@ -319,6 +358,7 @@ test('dashboard: summary is well-formed', async () => {
   const a = await ownerAgent();
   const res = await a.get('/api/dashboard/summary').expect(200);
   assert.equal(typeof res.body.data.today.sales, 'number');
+  assert.ok(Array.isArray(res.body.data.today.payment_breakdown));
   assert.ok(Array.isArray(res.body.data.best_sellers));
   assert.ok(Array.isArray(res.body.data.low_stock));
 });

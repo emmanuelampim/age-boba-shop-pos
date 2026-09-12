@@ -79,6 +79,23 @@ BACKUPS (very important!)
   pick any date range and it downloads the sales as a spreadsheet
   you can open on any office computer (Excel/LibreOffice/Google Sheets).
 
+RECOVERY (if something goes wrong)
+----------------------------------
+- Every sale is saved the moment it is confirmed, and kept in one
+  file. If the main database is ever lost or damaged, restore it
+  from an automatic backup:
+      1. "Close for the day" and wait for the server window to close
+         (the server MUST be stopped before restoring).
+      2. Right-click  windows\restore_backup.cmd  -> Run
+      3. It shows the list of daily backups, asks which date to
+         restore, and ALWAYS keeps a safety copy of the current
+         database first (pos-before-restore-<time>.db).
+      4. Start the POS again with start_pos.cmd and check Today's Sales.
+- Restores are logged in backups\restore-log.txt. Only the owner
+  should ever run the restore script.
+- Reinstalling/copying the shop to another computer: stop the server,
+  copy backend\data\pos.db (and the backups\ folder), start the POS.
+
 FIREWALL
 --------
 - This is a local-only app (localhost). If Windows shows a firewall

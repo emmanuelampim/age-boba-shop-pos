@@ -189,6 +189,9 @@ export function validateOrderPayload(input) {
       errs.push('paymentRef must be 64 characters or fewer.');
     }
   }
+  if (input.momoConfirmed !== undefined && typeof input.momoConfirmed !== 'boolean') {
+    errs.push('momoConfirmed must be a boolean.');
+  }
   return errs.join(' ') || null;
 }
 
@@ -201,6 +204,7 @@ export function createOrder({
   items,
   customerPhone = null,
   paymentRef = null,
+  momoConfirmed = false,
   user,
 }) {
   const result = transaction(() => {
@@ -219,19 +223,41 @@ export function createOrder({
 
     const phone = customerPhone ? normalizePhone(customerPhone) : '';
     const ref = paymentRef != null ? String(paymentRef).trim() : '';
-    // Mobile Money needs a way to trace the payment: the customer's phone
-    // number or the transaction number from the MoMo prompt.
-    if (payment.code === 'MOMO' && !phone && !ref) {
-      throw new AppError(
-        400,
-        'PAYMENT_CONTACT_REQUIRED',
-        'Customer phone number or Mobile Money transaction number is required.',
-      );
-    }
+
+    let storedRef = null;
+    let momoFlag = 0;
+    let momoStatus = null;
     if (payment.code === 'MOMO') {
-      if (phone && !PHONE_RE.test(phone)) {
-        throw new AppError(400, 'INVALID_PHONE', 'Customer phone number is invalid (e.g. use 0241234567).');
+      // Mobile Money needs a way to trace the payment: the customer's phone
+      // number or the last 4 digits of the MoMo transaction.
+      if (!phone && !ref) {
+        throw new AppError(
+          400,
+          'PAYMENT_CONTACT_REQUIRED',
+          'Customer phone number or the last 4 digits of the Mobile Money transaction is required.',
+        );
       }
+      if (ref) {
+        if (!/^\d{4}$/.test(ref)) {
+          throw new AppError(
+            400,
+            'INVALID_PAYMENT_REF',
+            'Mobile Money reference must be exactly the last 4 digits of the transaction.',
+          );
+        }
+        storedRef = `****${ref}`;
+      }
+      // The cashier must manually confirm they saw the MoMo payment arrive on
+      // the shop's MoMo device. There is no automatic provider verification.
+      if (momoConfirmed !== true) {
+        throw new AppError(
+          400,
+          'MOMO_CONFIRMATION_REQUIRED',
+          'Confirm that the Mobile Money payment was received before finalizing the sale.',
+        );
+      }
+      momoFlag = 1;
+      momoStatus = 'MANUAL_CONFIRMATION';
     }
     if (phone && !PHONE_RE.test(phone)) {
       throw new AppError(400, 'INVALID_PHONE', 'Customer phone number is invalid (e.g. use 0241234567).');
@@ -345,13 +371,15 @@ export function createOrder({
 
     const orderNumber = nextOrderNumber(db, branchId);
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const businessDate = new Date().toISOString().slice(0, 10);
 
     const orderResult = db
       .prepare(
         `INSERT INTO orders
            (order_number, request_id, branch_id, user_id, subtotal, discount, total,
-            payment_method_id, payment_method, customer_phone, payment_ref, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?, ?)`,
+            payment_method_id, payment_method, customer_phone, payment_ref,
+            momo_confirmed, momo_status, business_date, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?, ?)`,
       )
       .run(
         orderNumber,
@@ -364,7 +392,10 @@ export function createOrder({
         payment.id,
         payment.name,
         phone || null,
-        ref || null,
+        storedRef || null,
+        momoFlag,
+        momoStatus,
+        businessDate,
         now,
         now,
       );
@@ -402,8 +433,23 @@ export function createOrder({
       action: 'ORDER_CREATED',
       entityType: 'order',
       entityId: orderId,
-      details: { number: orderNumber, subtotal, discount, total, items: orderItems.length },
+      details: { number: orderNumber, subtotal, discount, total, items: orderItems.length, momoStatus },
     });
+
+    if (momoStatus) {
+      auditInTxn(db, {
+        user,
+        action: 'MOMO_PAYMENT_CONFIRMED',
+        entityType: 'order',
+        entityId: orderId,
+        details: {
+          number: orderNumber,
+          amount: total,
+          reference: storedRef,
+          confirmedBy: user.name ?? null,
+        },
+      });
+    }
 
     return { order: enrichOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId)), created: true, duplicate: false };
   });
@@ -502,6 +548,14 @@ export function dashboardSummary(user) {
 
   const avg = todayOrders.count > 0 ? Math.round(todayOrders.sales / todayOrders.count) : 0;
 
+  const paymentBreakdown = db
+    .prepare(
+      `SELECT payment_method, COALESCE(SUM(total), 0) AS sales, COUNT(*) AS count
+       FROM orders WHERE status = 'COMPLETED' AND created_at >= ? AND created_at < ?
+       GROUP BY payment_method ORDER BY sales DESC`,
+    )
+    .all(today.start, today.end);
+
   const bestSellers = db
     .prepare(
       `SELECT oi.product_id AS id, oi.product_name AS name, SUM(oi.quantity) AS quantity, SUM(oi.total_price) AS revenue
@@ -532,6 +586,7 @@ export function dashboardSummary(user) {
       ...formatRow(todayOrders),
       order_count: todayOrders.count,
       average_order_value: avg,
+      payment_breakdown: formatRow(paymentBreakdown),
     },
     best_sellers: formatRow(bestSellers),
     low_stock: formatRow(lowStock),

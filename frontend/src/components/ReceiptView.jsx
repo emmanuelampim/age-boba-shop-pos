@@ -73,8 +73,14 @@ export default function ReceiptView({ order, settings }) {
       )}
       {r.paymentRef && (
         <div className="receipt-line">
-          <span>MoMo TXN</span>
+          <span>MoMo Ref</span>
           <span className="num">{r.paymentRef}</span>
+        </div>
+      )}
+      {r.momoStatus && (
+        <div className="receipt-line">
+          <span>Status</span>
+          <span className="num">Manually Confirmed</span>
         </div>
       )}
       {r.servedBy && (

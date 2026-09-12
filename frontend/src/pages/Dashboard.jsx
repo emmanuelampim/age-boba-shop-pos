@@ -90,6 +90,12 @@ export default function Dashboard() {
           <div className="stat-label">Avg Order Value</div>
           <div className="stat-value">{c(data.today.average_order_value)}</div>
         </div>
+        {(data.today.payment_breakdown || []).map((p) => (
+          <div className="stat-card" key={p.payment_method || 'other'}>
+            <div className="stat-label">{p.payment_method} today</div>
+            <div className="stat-value">{c(p.sales)}</div>
+          </div>
+        ))}
       </div>
 
       <div className="dash-grid">
