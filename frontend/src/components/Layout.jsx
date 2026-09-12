@@ -21,6 +21,7 @@ export default function Layout({ children }) {
   const [closeConfirm, setCloseConfirm] = useState(false)
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState(null)
+  const [reportNote, setReportNote] = useState(null)
   const [dayClosed, setDayClosed] = useState(false)
 
   useEffect(() => {
@@ -34,7 +35,16 @@ export default function Layout({ children }) {
     setCloseError(null)
     setCloseConfirm(false)
     try {
-      await api.post('/shutdown')
+      const res = await api.post('/shutdown')
+      const dl = res?.download
+      if (dl?.csv) {
+        try {
+          api.downloadText(dl.filename, dl.csv)
+          setReportNote('downloaded')
+        } catch {
+          setReportNote('failed')
+        }
+      }
       setDayClosed(true)
     } catch (e) {
       setCloseError(e.message)
@@ -49,7 +59,11 @@ export default function Layout({ children }) {
           <div className="day-closed-icon" aria-hidden="true">🔒</div>
           <h1>All sales are saved</h1>
           <p>
-            You can now switch off the computer.
+            {reportNote === 'downloaded' &&
+              'Today’s sales report was downloaded — keep it somewhere safe.'}
+            {reportNote === 'failed' &&
+              'The sales report download could not start, but the data is still saved on this computer and the USB drive.'}
+            {reportNote === null && 'You can now switch off the computer.'}
             <br />
             See you tomorrow!
           </p>
@@ -116,7 +130,7 @@ export default function Layout({ children }) {
       <ConfirmDialog
         open={closeConfirm}
         title="Close for the day?"
-        message="All sales are saved automatically. After closing, the POS shuts down. Press OK only when the shop is done for the day."
+        message="Today’s sales are saved automatically and a copy of the sales report will be downloaded to this computer. After closing, the POS shuts down. Press OK only when the shop is done for the day."
         confirmLabel={closing ? 'Saving…' : 'Yes, close now'}
         cancelLabel="Not yet"
         onConfirm={closeForDay}

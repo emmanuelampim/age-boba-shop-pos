@@ -94,3 +94,14 @@ export async function downloadFile(path, params, filename) {
   link.remove()
   URL.revokeObjectURL(link.href)
 }
+
+export function downloadText(filename, text) {
+  const blob = new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(link.href)
+}
