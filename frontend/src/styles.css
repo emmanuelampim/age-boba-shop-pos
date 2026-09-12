@@ -32,6 +32,7 @@
   --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --receipt-width: 80mm;
   --z-modal: 1000;
   --z-toast: 1100;
 }
@@ -758,14 +759,21 @@ tbody tr:hover { background: var(--color-bg); }
 .receipt-footer { text-align: center; font-size: 11px; color: #555; margin-top: 10px; }
 
 @page {
-  size: 80mm auto;
+  size: var(--receipt-width) auto;
   margin: 0;
 }
 
+/* Print only the receipt, laid out for a variable-length thermal roll.
+   Width is 80mm; height is "auto" because receipts vary in length. The
+   on-screen layout is untouched — everything here applies only when the
+   user prints via Chrome's print dialog. */
 @media print {
-  html, body { margin: 0; padding: 0; }
+  html, body { margin: 0; padding: 0; background: #fff; }
   body * { visibility: hidden; }
 
+  /* The receipt lives inside a .modal (position: fixed on screen). In print,
+     reset the modal to static layout so position:absolute on .receipt
+     resolves to the page top-left corner rather than the dialog box. */
   .modal {
     position: static !important;
     inset: auto !important;
@@ -785,20 +793,27 @@ tbody tr:hover { background: var(--color-bg); }
 
   .receipt, .receipt * { visibility: visible; }
   .receipt {
-    position: static;
-    width: 72mm;
-    max-width: 72mm;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--receipt-width);
+    max-width: var(--receipt-width);
     margin: 0;
     padding: 1mm;
     border: none;
     box-shadow: none;
-    font-size: 13px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
   }
   .receipt-watermark { display: none; }
-  .receipt-header h2 { font-size: 16px; }
-  .receipt-header p, .receipt-sub, .receipt-footer { font-size: 12px; }
-  .receipt-total { font-size: 15px; }
-  .receipt-line { align-items: baseline; }
+  .receipt-header, .receipt-footer { text-align: center; }
+  .receipt-item, .receipt-line {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
 
 /* ─── Utility ──────────────────────────────────────── */
