@@ -19,7 +19,25 @@ const SETTING_SCHEMA = {
   currency_symbol: 'string',
   timezone: 'string',
   hours: 'string',
+  // Customer-facing screen on a second monitor.
+  customer_display_enabled: 'boolean',
+  customer_thank_you_message: 'string',
+  customer_thank_you_seconds: 'string',
 };
+
+// Sensible defaults for customer display settings when the database does
+// not have a value yet (fresh install or pre-existing databases).
+export const CUSTOMER_DISPLAY_DEFAULTS = {
+  customer_display_enabled: true,
+  customer_thank_you_message: 'THANK YOU!',
+  customer_thank_you_seconds: '8',
+};
+
+function normalizeThankYouSeconds(value) {
+  const n = Number.parseInt(String(value).trim(), 10);
+  if (!Number.isInteger(n) || n < 3 || n > 30) return null;
+  return String(n);
+}
 
 const DAYS_OF_WEEK = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
@@ -64,7 +82,7 @@ function normalizeSetting(key, value) {
 
 export function getSettings() {
   const rows = getDb().prepare('SELECT key, value FROM settings').all();
-  const out = {};
+  const out = { ...CUSTOMER_DISPLAY_DEFAULTS };
   for (const r of rows) {
     const type = SETTING_SCHEMA[r.key];
     if (r.key === 'hours') out[r.key] = parseHours(r.value);
@@ -91,6 +109,19 @@ export function updateSettings(patch, user) {
           `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
         ).run(key, serialized);
+        patches.push(key);
+        continue;
+      }
+      if (key === 'customer_thank_you_seconds') {
+        const normalized = normalizeThankYouSeconds(value);
+        if (normalized === null) {
+          errors.push('customer_thank_you_seconds must be an integer between 3 and 30.');
+          continue;
+        }
+        db.prepare(
+          `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+        ).run(key, normalized);
         patches.push(key);
         continue;
       }

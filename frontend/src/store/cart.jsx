@@ -25,15 +25,17 @@ function cartReducer(state, action) {
       }
     case 'REMOVE_ITEM':
       return { ...state, items: state.items.filter((i) => i.id !== action.id) }
+    case 'SET_DISCOUNT':
+      return { ...state, discount: Math.max(0, Math.round(Number(action.cents) || 0)) }
     case 'CLEAR':
-      return { items: [] }
+      return { items: [], discount: 0 }
     default:
       return state
   }
 }
 
 export function CartProvider({ children }) {
-  const [state, dispatch] = useReducer(cartReducer, { items: [] })
+  const [state, dispatch] = useReducer(cartReducer, { items: [], discount: 0 })
 
   const subtotal = useMemo(
     () => state.items.reduce((sum, item) => sum + (item.unitPrice + item.toppingUnitTotal) * item.quantity, 0),
@@ -45,8 +47,12 @@ export function CartProvider({ children }) {
     [state.items]
   )
 
+  const total = useMemo(() => Math.max(0, subtotal - state.discount), [subtotal, state.discount])
+
   return (
-    <CartContext.Provider value={{ items: state.items, subtotal, itemCount, dispatch }}>
+    <CartContext.Provider
+      value={{ items: state.items, subtotal, discount: state.discount, total, itemCount, dispatch }}
+    >
       {children}
     </CartContext.Provider>
   )

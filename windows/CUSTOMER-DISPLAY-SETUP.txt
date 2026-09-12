@@ -1,0 +1,75 @@
+BOBA POS - CUSTOMER DISPLAY SETUP (second screen)
+==================================================
+
+WHAT IT DOES
+------------
+If the shop has TWO monitors, the shop can show customers a big,
+attractive screen while the cashier uses the POS on the other one:
+
+  Screen 1 (cashier):  the normal POS you already know.
+  Screen 2 (customer): "Welcome", the live order while it is being
+                       built, the total at payment time, then a
+                       "PAYMENT RECEIVED" thank-you screen.
+
+The customer screen shows the SAME numbers the cashier sees - it is
+fed live from the cashier's screen, not typed twice, so it can never
+disagree with the order. The customer screen is display-only: it
+cannot change any order, and customers cannot touch it (it is
+full-screen with no menus).
+
+WHAT YOU NEED
+-------------
+1. Two monitors plugged into the shop computer, one showing the
+   cashier screen, one where customers can see it.
+2. Everything in the main WINDOWS-7-SETUP-GUIDE.txt (Node, Chrome,
+   the boba-pos folder).
+
+STARTING IT (one time, to test)
+-------------------------------
+1. Start the POS as usual:  right-click  windows\start_pos.cmd  -> Run
+2. Log in on the cashier screen.
+3. The customer screen should open itself on Screen 2 automatically
+   when you log in. (Settings -> Customer display -> "Open customer
+   display now" opens it manually if it did not.)
+4. If it opened on the WRONG screen: drag the small window to Screen 2,
+   close that window, then reopen from Settings -> Customer display ->
+   "Open customer display now". It remembers which monitor to use.
+
+KEEPING IT ON AFTER A REBOOT
+----------------------------
+By default the customer screen opens automatically while the cashier
+is logged in and the setting is enabled (Settings -> Customer display
+-> "Enable customer display" is ticked).
+
+For a permanent full-screen kiosk that opens even before login:
+1. Put a shortcut to  windows\start_customer_display.cmd  in the
+   Startup folder (Win+R, type  shell:startup, press Enter, drop the
+   shortcut in).
+2. Windows will open the kiosk customer screen at every login, right
+   after the POS server starts.
+3. To leave kiosk mode later: press Alt+F4 to close the customer
+   screen.
+
+TURNING IT OFF
+--------------
+- Owners: Settings -> Customer display -> untick "Enable customer
+  display", then press Save. The customer screen closes itself.
+- To stop it from auto-starting after reboot: remove the shortcut from
+  the Startup folder (and run windows\remove_autostart.cmd if used).
+
+CUSTOMISING
+-----------
+- Settings -> Customer display (owner only):
+    * Enable / disable the display.
+    * Thank-you message after payment (default: THANK YOU!).
+    * How long the thank-you screen stays (3-30 seconds, default 8).
+
+GOOD TO KNOW
+------------
+- The reading on Screen 2 is LIVE: it updates as items are added,
+  when a discount is applied, and shows the exact total before the
+  cashier confirms the sale.
+- After cash / mobile money payment, the total appears on the thank-you
+  screen, then it returns to the welcome screen for the next customer.
+- The customer screen needs no login and calls no server functions.
+- Both screens work fully offline, exactly like the POS.

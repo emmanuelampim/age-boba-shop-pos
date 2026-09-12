@@ -425,6 +425,36 @@ test('settings: hours are stored as parsed object', async () => {
   assert.equal(updated.body.data.hours.wed.open, '15:00'); // unchanged days kept
 });
 
+test('settings: customer display defaults seed into GET /settings', async () => {
+  const a = await ownerAgent();
+  const s = await a.get('/api/settings').expect(200);
+  assert.equal(s.body.data.customer_display_enabled, true);
+  assert.equal(s.body.data.customer_thank_you_message, 'THANK YOU!');
+  assert.equal(s.body.data.customer_thank_you_seconds, '8');
+});
+
+test('settings: customer display values update and validate', async () => {
+  const a = await ownerAgent();
+
+  // boolean toggle persisted
+  await a.patch('/api/settings').send({ customer_display_enabled: false }).expect(200);
+  assert.equal((await a.get('/api/settings').expect(200)).body.data.customer_display_enabled, false);
+  // non-boolean rejected
+  await a.patch('/api/settings').send({ customer_display_enabled: 'no' }).expect(400);
+  await a.patch('/api/settings').send({ customer_display_enabled: true }).expect(200);
+
+  // thank-you message saved
+  await a.patch('/api/settings').send({ customer_thank_you_message: 'Come again!' }).expect(200);
+  assert.equal((await a.get('/api/settings').expect(200)).body.data.customer_thank_you_message, 'Come again!');
+
+  // seconds: 3..30 only
+  await a.patch('/api/settings').send({ customer_thank_you_seconds: '2' }).expect(400);
+  await a.patch('/api/settings').send({ customer_thank_you_seconds: '31' }).expect(400);
+  await a.patch('/api/settings').send({ customer_thank_you_seconds: 'abc' }).expect(400);
+  await a.patch('/api/settings').send({ customer_thank_you_seconds: '12' }).expect(200);
+  assert.equal((await a.get('/api/settings').expect(200)).body.data.customer_thank_you_seconds, '12');
+});
+
 test('settings: logo upload endpoint removed (fixed receipt logo)', async () => {
   const a = await ownerAgent();
   const pixel = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';

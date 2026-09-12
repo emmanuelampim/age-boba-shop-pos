@@ -68,6 +68,9 @@ export async function seed(db = getDb()) {
     receipt_show_logo: '0',
     receipt_show_address: '1',
     receipt_show_phone: '1',
+    customer_display_enabled: '1',
+    customer_thank_you_message: 'THANK YOU!',
+    customer_thank_you_seconds: '8',
   };
   for (const [k, v] of Object.entries(settings)) {
     db.prepare(

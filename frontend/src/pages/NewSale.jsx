@@ -4,6 +4,7 @@ import { useCart } from '../store/cart'
 import { useToast } from '../store/toast'
 import { useAuth } from '../store/auth'
 import { formatCents } from '../lib/money'
+import { showThankYou, setMethodName } from '../lib/customerDisplay'
 import Modal from '../components/ui/Modal'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
@@ -13,7 +14,7 @@ import ReceiptView from '../components/ReceiptView'
 const PRODUCT_ICON = '🧋'
 
 export default function NewSale() {
-  const { items, subtotal, itemCount, dispatch } = useCart()
+  const { items, subtotal, discount, total, itemCount, dispatch } = useCart()
   const { addToast } = useToast()
 
   const [products, setProducts] = useState(null)
@@ -113,8 +114,16 @@ export default function NewSale() {
     setCustomizing(null)
   }
 
-  const discountCents = Math.round((parseFloat(discountInput) || 0) * 100)
-  const displayTotal = Math.max(0, subtotal - discountCents)
+  const discountCents = discount
+  const displayTotal = total
+
+  // Keep the "amount" text field a plain local entry point that writes into
+  // the shared cart store (single source of truth for both screens).
+  useEffect(() => {
+    const cents = Math.round((parseFloat(discountInput) || 0) * 100)
+    if (cents !== discount) dispatch({ type: 'SET_DISCOUNT', cents })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discountInput])
 
   const openCheckout = () => {
     if (items.length === 0) return
@@ -149,6 +158,8 @@ export default function NewSale() {
         return
       }
       addToast(`Sale ${order.order_number_display} completed`)
+      setMethodName(selectedPayName || 'Payment')
+      showThankYou(selectedPayName || 'Payment', order.total ?? displayTotal)
       dispatch({ type: 'CLEAR' })
       setCheckoutOpen(false)
       setReviewOpen(false)
@@ -258,7 +269,13 @@ export default function NewSale() {
           <div className="cart-header">
             <span>Current Order</span>
             {items.length > 0 && (
-              <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'CLEAR' })}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  dispatch({ type: 'CLEAR' })
+                  setDiscountInput('')
+                }}
+              >
                 Clear
               </button>
             )}

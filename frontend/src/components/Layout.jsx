@@ -3,6 +3,7 @@ import { NavLink, Link } from 'react-router-dom'
 import { useAuth } from '../store/auth'
 import * as api from '../api/client'
 import ConfirmDialog from './ui/ConfirmDialog'
+import CustomerDisplayController from './CustomerDisplayController'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '📊', exact: true },
@@ -16,17 +17,17 @@ const NAV = [
 export default function Layout({ children }) {
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
-  const [shopName, setShopName] = useState(null)
+  const [settings, setSettings] = useState(null)
   const [closeConfirm, setCloseConfirm] = useState(false)
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState(null)
   const [dayClosed, setDayClosed] = useState(false)
 
   useEffect(() => {
-    api.get('/settings').then((s) => setShopName(s.shop_name)).catch(() => {})
+    api.get('/settings').then(setSettings).catch(() => {})
   }, [])
 
-  const brand = shopName || 'AGE BOBA SHOP'
+  const brand = settings?.shop_name || 'AGE BOBA SHOP'
 
   const closeForDay = async () => {
     setClosing(true)
@@ -59,6 +60,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="app-shell">
+      <CustomerDisplayController settings={settings} />
       {open && (
         <div className="sidebar-overlay" onClick={() => setOpen(false)} aria-hidden="true" />
       )}

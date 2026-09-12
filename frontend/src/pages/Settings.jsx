@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import * as api from '../api/client'
 import { useToast } from '../store/toast'
 import { useAuth } from '../store/auth'
+import * as customerDisplay from '../lib/customerDisplay'
 import Badge from '../components/Badge'
 import Modal from '../components/ui/Modal'
 import ErrorState from '../components/ui/ErrorState'
@@ -35,6 +36,7 @@ const SECTIONS = [
   { id: 'receipt', icon: '🧾', label: 'Receipt' },
   { id: 'hours', icon: '🕐', label: 'Business hours', owner: true },
   { id: 'payments', icon: '💳', label: 'Payment methods', owner: true },
+  { id: 'display', icon: '🖥️', label: 'Customer display', owner: true },
   { id: 'users', icon: '👥', label: 'Staff & roles', owner: true },
 ]
 
@@ -367,6 +369,87 @@ export default function Settings() {
                 {m.name} {m.is_active ? '✓' : '(off)'}
               </button>
             ))}
+          </div>
+        </Panel>
+      )
+    }
+
+    if (section === 'display') {
+      return (
+        <Panel
+          title="Customer display"
+          icon="🖥️"
+          onSave={() =>
+            saveSection(
+              {
+                customer_display_enabled: settings.customer_display_enabled,
+                customer_thank_you_message: settings.customer_thank_you_message,
+                customer_thank_you_seconds: settings.customer_thank_you_seconds,
+              },
+              'Customer display'
+            )
+          }
+        >
+          <label className="flex gap-sm items-center mb-md">
+            <input
+              type="checkbox"
+              checked={settings.customer_display_enabled !== false}
+              onChange={(e) => {
+                const v = e.target.checked
+                set('customer_display_enabled', v)
+                if (v) {
+                  customerDisplay.connect({ settings: { ...settings, customer_display_enabled: v } })
+                  customerDisplay.setEnabled(true)
+                  customerDisplay.ensureOpen()
+                } else {
+                  customerDisplay.setEnabled(false)
+                }
+              }}
+            />
+            <span className="text-sm">
+              Enable customer display (a second screen that shows the current order while the cashier works)
+            </span>
+          </label>
+
+          <div className="grid-2">
+            <div className="input-group">
+              <label htmlFor="cd-thanks">Thank-you message after payment</label>
+              <input
+                id="cd-thanks"
+                className="input"
+                value={settings.customer_thank_you_message ?? 'THANK YOU!'}
+                onChange={(e) => set('customer_thank_you_message', e.target.value)}
+                maxLength={60}
+              />
+            </div>
+            <div className="input-group">
+              <label htmlFor="cd-seconds">Thank-you screen duration (seconds, 3-30)</label>
+              <input
+                id="cd-seconds"
+                className="input"
+                type="number"
+                min="3"
+                max="30"
+                value={settings.customer_thank_you_seconds ?? '8'}
+                onChange={(e) => set('customer_thank_you_seconds', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="mt-md">
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                customerDisplay.connect({ settings: { ...settings, customer_display_enabled: true } })
+                customerDisplay.setEnabled(true)
+                customerDisplay.ensureOpen({ force: true })
+              }}
+            >
+              Open customer display now
+            </button>
+            <span className="text-sm text-muted ml-sm">
+              Opens the customer window even if no second monitor is detected (for testing).
+            </span>
           </div>
         </Panel>
       )
