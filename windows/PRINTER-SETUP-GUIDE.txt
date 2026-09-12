@@ -1,0 +1,72 @@
+BOBA POS - XPRINTER XP-E200L RECEIPT PRINTER SETUP (Windows 7)
+===============================================================
+
+This installs the Windows driver for the Xprinter XP-E200L 80mm
+thermal receipt printer so Windows stops showing it as "offline".
+
+WHAT YOU NEED
+-------------
+- This guide + the driver installer on a USB stick:
+      installers\printer\XPrinter Driver Setup V8.2.exe
+  (SHA-256: a84e7cea4fdca8370a7a3d4c858970eb7ac368602b184de8fe06abfb4c653d78)
+  Only one of the two printers below can be detected: whatever shows
+  in Devices and Printers - the receipt printer is the XP-E200L.
+
+STEP 1 - INSTALL THE DRIVER (paper does NOT need to be loaded yet)
+------------------------------------------------------------------
+1. Copy  installers\printer\XPrinter Driver Setup V8.2.exe  to the
+   computer (e.g. C:\), right-click it and choose "Run as
+   administrator". If Windows shows a SmartScreen/warning, choose
+   "Run anyway" (this file is the official Xprinter driver).
+2. When the driver window opens, choose these settings:
+      - Printer series:   XP80-C
+      - Interface:        USB
+3. Click "Check USB Port" - it will list the USB port the printer is
+   on (e.g. USB001). Note the number down.
+4. Verify the printer is switched ON and the USB cable goes straight
+   from the printer to this computer.
+5. Click "Install Now". Wait for it to say the driver was installed.
+6. Close the driver window.
+
+STEP 2 - CHECK WINDOWS CAN SEE IT
+---------------------------------
+1. Start > Control Panel > Devices and Printers.
+2. The printer should now appear as a normal printer (NOT showing
+   "Offline"), named something like "XP-80C" or "XPrinter".
+3. Right-click it > "Set as default printer" (the POS prints to the
+   default printer).
+
+STEP 3 - PRINT A TEST PAGE
+--------------------------
+1. Right-click the printer > "Printer properties" > "Print test page".
+2. Paper should come out of the printer.
+3. If nothing prints:
+   - Check the FEED button on the printer: hold it while switching the
+     printer ON, then release - this prints a self-test label. If that
+     works, the printer is fine and the problem is the connection.
+   - Unplug/plug the USB cable (use the cable that came with it) and
+     run "Check USB Port" again in the driver window.
+   - Reboot the computer once, then try again.
+
+STEP 4 - PRINT FROM THE POS
+---------------------------
+1. Make a sale in the POS and click "Print receipt".
+2. The receipt should come out of the XP-E200L.
+3. Receipt tips:
+   - The receipt paper is 80mm wide thermal paper (barcode side facing
+     the feed). Load a fresh roll if the print is faint.
+   - If the receipt is cut off or too narrow, check the paper width
+     settings in the browser before printing (paper size 80 x 297 mm,
+     margins 0). The POS prints a 72mm-usable-width receipt on 80mm
+     paper by design.
+
+STILL "OFFLINE"?
+----------------
+- An "Offline" printer in Devices and Printers usually means the
+  driver was never installed or the USB cable is dead/bad. Repeat
+  Step 1 with the printer on and the cable plugged in, then check the
+  port chosen by "Check USB Port" matches the printer's port.
+- If TWO printers show and one is "Offline": the Online one is the
+  receipt printer - set THAT one as default.
+- Only after the printer prints a test page (Step 3) does the POS
+  receipt printing matter.

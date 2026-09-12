@@ -5,7 +5,8 @@ Follow these documents, in order:
   1. WINDOWS-7-SETUP-GUIDE.txt      - install everything (17 steps)
   2. DAILY-USE-GUIDE.txt            - how the cashier runs a normal day
   3. CUSTOMER-DISPLAY-SETUP.txt     - second screen customers watch
-  4. TROUBLESHOOTING-WINDOWS-7.txt  - what to do when something is wrong
+  4. PRINTER-SETUP-GUIDE.txt        - Xprinter XP-E200L receipt printer
+  5. TROUBLESHOOTING-WINDOWS-7.txt  - what to do when something is wrong
 
 This folder runs the POS entirely on the shop's computer. No internet
 required after setup. The server + data live here; a web browser is the
