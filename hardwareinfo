@@ -1,0 +1,207 @@
+AGE BOBA SHOP POS - hardware information
+Collected on: Sat 09/12/2026 16:23:45.37
+Machine: 1X00-PC
+
+=== 1. Windows edition, service pack, 32/64-bit ===
+
+ 
+ 
+ 
+ C a p t i o n = M i c r o s o f t   W i n d o w s   7   U l t i m a t e   
+ 
+ O S A r c h i t e c t u r e = 3 2 - b i t 
+ 
+ S e r v i c e P a c k M a j o r V e r s i o n = 1 
+ 
+ V e r s i o n = 6 . 1 . 7 6 0 1 
+ 
+ 
+ 
+ 
+ 
+ 
+=== 2. Confirm 32-bit ===
+Processor architecture: x86 (x86 = 32-bit, AMD64 = 64-bit)
+
+=== 3. CPU model ===
+
+ 
+ 
+ 
+ N a m e = I n t e l ( R )   C e l e r o n ( R )   C P U     J 1 9 0 0     @   1 . 9 9 G H z 
+ 
+ 
+ 
+ 
+ 
+ 
+=== 4. Memory (RAM) ===
+
+ 
+ 
+ 
+ T o t a l P h y s i c a l M e m o r y = 2 0 3 4 5 9 7 8 8 8 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ F r e e P h y s i c a l M e m o r y = 4 7 3 0 7 6 
+ 
+ 
+ 
+ 
+ 
+ 
+=== 5. Drives and free space ===
+
+ 
+ 
+ 
+ D e v i c e I D = C : 
+ 
+ F r e e S p a c e = 5 3 8 1 1 8 1 4 4 0 
+ 
+ S i z e = 1 9 3 2 9 4 4 5 8 8 8 
+ 
+ 
+ 
+ 
+ 
+ D e v i c e I D = D : 
+ 
+ F r e e S p a c e = 1 2 5 7 8 5 8 2 5 2 8 
+ 
+ S i z e = 1 2 6 8 2 5 2 2 6 2 4 
+ 
+ 
+ 
+ 
+ 
+ 
+=== 6. Graphics card / display resolutions ===
+
+ 
+ 
+ 
+ C u r r e n t H o r i z o n t a l R e s o l u t i o n = 1 3 6 6 
+ 
+ C u r r e n t V e r t i c a l R e s o l u t i o n = 7 6 8 
+ 
+ N a m e = I n t e l ( R )   A t o m ( T M )   P r o c e s s o r   E 3 8 0 0   S e r i e s / I n t e l ( R )   C e l e r o n ( R )   P r o c e s s o r   N 2 9 2 0 / J 1 9 0 0 
+ 
+ 
+ 
+ 
+ 
+ 
+=== 7. Receipt printer ===
+
+ 
+ 
+ 
+ D e f a u l t = T R U E 
+ 
+ N a m e = X P - 9 0   ( c o p y   1 ) 
+ 
+ P o r t N a m e = U S B 0 0 1 
+ 
+ 
+ 
+ 
+ 
+ D e f a u l t = F A L S E 
+ 
+ N a m e = X P - 9 0   ( c o p y   2 ) 
+ 
+ P o r t N a m e = L P T 1 : 
+ 
+ 
+ 
+ 
+ 
+ D e f a u l t = F A L S E 
+ 
+ N a m e = X P - 9 0 
+ 
+ P o r t N a m e = L P T 1 : 
+ 
+ 
+ 
+ 
+ 
+ D e f a u l t = F A L S E 
+ 
+ N a m e = X P - 8 0 C 
+ 
+ P o r t N a m e = L P T 1 : 
+ 
+ 
+ 
+ 
+ 
+ D e f a u l t = F A L S E 
+ 
+ N a m e = F a x 
+ 
+ P o r t N a m e = S H R F A X : 
+ 
+ 
+ 
+ 
+ 
+ D e f a u l t = F A L S E 
+ 
+ N a m e = E P S O N   T M - T 2 0 I I   R e c e i p t 
+ 
+ P o r t N a m e = E S D P R T 0 0 1 
+ 
+ 
+ 
+ 
+ 
+ 
+=== 8. Web browsers installed ===
+Google Chrome: INSTALLED
+Internet Explorer: INSTALLED
+
+=== 9. Node.js and Python (only if installed) ===
+v12.22.12
+Python: NOT FOUND
+
+=== 10. USB controllers (ports present) ===
+
+ 
+ 
+ 
+ N a m e = S t a n d a r d   E n h a n c e d   P C I   t o   U S B   H o s t   C o n t r o l l e r 
+ 
+ 
+ 
+ 
+ 
+ 
+=== 11. Locale, time zone, date/time format ===
+
+ 
+ 
+ 
+ C a p t i o n = ( U T C )   C a s a b l a n c a 
+ 
+ 
+ 
+ 
+ 
+ System Locale:             en-us;English (United States)
+Input Locale:              en-us;English (United States)
+Current date/time display: Sat 09/12/2026 16:23:50.07
+
+=== 12. Four quick questions for the shop (please answer) ===
+  A) Which is the CASHIER screen and which is the CUSTOMER screen (left/right or A/B)?
+  B) Does this PC have internet access right now? (Yes/No)
+  C) What is plugged into each USB port? (printer, mouse, keyboard, flash drive)
+  D) Is the cash register area normally near a wall power outlet? (Yes/No)
