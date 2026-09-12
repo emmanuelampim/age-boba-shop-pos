@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { getDb, closeDb } from '../db/connection.js';
 import { authenticate } from '../middleware/auth.js';
 import { ok, sendError } from '../lib/http.js';
+import { createDailyBackup, buildDailyCsv } from '../services/backupService.js';
 import { logger } from '../lib/logger.js';
 
 let shuttingDown = false;
@@ -16,11 +17,26 @@ export function createRouter() {
 
       // Force a final flush of every buffered write to disk.
       getDb().exec('SELECT 1');
+
+      // Build the spreadsheet copy of today's sales while the DB is open.
+      const csv = buildDailyCsv();
+
       closeDb();
+
+      // Copy the saved database + spreadsheet into local backups and any USB.
+      const backup = createDailyBackup({ csvContent: csv });
 
       logger.info('day_closed', { user: req.user?.email ?? 'unknown' });
 
-      ok(res, { saved: true, message: 'All data saved.' });
+      ok(res, {
+        saved: true,
+        message: 'All data saved.',
+        backup: {
+          files: backup.local,
+          usb: backup.usb,
+          csvWritten: backup.csv,
+        },
+      });
 
       // Give the browser time to receive the response before exiting.
       setTimeout(() => process.exit(0), 1500);

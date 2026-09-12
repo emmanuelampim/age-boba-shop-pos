@@ -64,6 +64,8 @@ Health check: `GET http://localhost:4000/api/health`
 | ------------- | ------------------------------------------------------- | ---------------------------- |
 | `APP_PORT`    | HTTP port                                               | `4000`                       |
 | `DB_PATH`     | SQLite file path (e.g. `./data/pos.db`)                 | `./data/pos.db`              |
+| `BACKUPS_DIR` | Folder for automatic daily backups (db + csv)           | `./data/backups`             |
+| `USB_BACKUP_DIR` | Fixed folder to copy backups to (else auto-probe USB on Windows) | auto-probe        |
 | `JWT_SECRET`  | HMAC secret for signing auth tokens (required in prod)  | `dev-secret-change-me`       |
 | `JWT_TTL`     | Token lifetime seconds                                  | `86400` (24h)                |
 | `TRUST_PROXY` | Set `true` behind a reverse proxy (for rate limiting)   | `false`                      |
@@ -154,6 +156,7 @@ Common response shapes:
 | PATCH  | `/api/users/:id`              | OWNER       | Update user (role/status/password)       |
 | GET    | `/api/users`                  | OWNER       | List users                               |
 | POST   | `/api/shutdown`               | auth        | Save everything, stop the server (POS only, disabled in tests) |
+| GET    | `/api/export/sales`           | auth        | Download sales as Excel CSV (`?from=&to=`, default today)      |
 | GET    | `/health`                     | public      | App + DB health check                    |
 
 ### Order creation example
@@ -207,10 +210,22 @@ Frontend: `npm run build` (runs Vite production build) and `npm run lint`.
 ## Backup strategy
 
 - **What**: the SQLite file `backend/data/pos.db`. It is written via atomic replace, so the **database is a single file** — no `-wal`/`-shm` siblings.
-- **How often**: end of every day (or hourly). `cp pos.db backups/pos-$(date +%F).db` (with sql.js the file is consistent even if copied mid-run — it reflects the last committed write; stopping the server first gives the freshest copy).
+- **How often**: every day, automatically. See below — but the rule of thumb stays: `cp pos.db backups/pos-$(date +%F).db` (with sql.js the file is consistent even if copied mid-run — it reflects the last committed write; stopping the server first gives the freshest copy).
 - **Where**: copy snapshots to the same host, then off-site (cloud object storage / NAS / USB for the Windows 7 box). Keep daily for 30 days, monthly for 12 months.
 - **Restore**: stop the app, `cp` the backup over `pos.db`, start the app, verify `GET /api/health` and recent order counts.
 - **Manual integrity check**: `sqlite3 pos.db "PRAGMA integrity_check;"` before restoring.
+
+### Automatic daily backups + spreadsheets (built in)
+
+The POS keeps its own daily copies automatically (no command lines):
+
+- **Close for the day** (`POST /api/shutdown`) writes two files into `backend/data/backups/`:
+  - `pos-YYYY-MM-DD.db` — a full copy of the database for that day. To restore, stop the server and copy it back over `pos.db`.
+  - `sales-YYYY-MM-DD.csv` — a **spreadsheet** of that day's sales (one row per item bought: date/time, order #, product, size, toppings, qty, prices, discount, total, payment, staff). UTF-8 with BOM, opens in Excel/LibreOffice/Google Sheets. This is the answer to "can we view it like a spreadsheet."
+  - Backups older than 30 days are pruned automatically.
+- **USB pendrive**: if a USB stick is plugged in (or `USB_BACKUP_DIR` is set to a fixed folder), those same two files are copied into a `BobaPOS Backups` folder on the drive automatically at close-of-day.
+- **Safety-net scheduled task** (`windows\install_backup.cmd` on the Win7 box): copies the database locally + to USB every night at 11 PM even if nobody closed for the day (`windows\backup_pos.cmd`, via Task Scheduler `\backup_pos.vbs`).
+- **Download any range**: the Sales page has a "Download report (Excel/CSV)" button (`GET /api/export/sales?from=&to=`) that returns the matching rows as a spreadsheet on demand.
 
 ---
 

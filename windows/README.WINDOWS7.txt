@@ -58,11 +58,26 @@ DAILY USE
 BACKUPS (very important!)
 -------------------------
 - All data is in ONE file:  backend\data\pos.db
-- Copy it to a USB stick / cloud at the end of each day, or better:
-  schedule it. If the file is ever lost, the shop's history is lost.
-- Stop the server before copying (stop_pos.cmd) or copy while running;
-  the file is replace-safe but copying a running file can give a
-  slightly stale copy.
+- Every time someone clicks "Close for the day", the POS keeps a
+  full copy of the day automatically:
+      backend\data\backups\pos-YYYY-MM-DD.db     (full data)
+      backend\data\backups\sales-YYYY-MM-DD.csv  (a spreadsheet of
+       the day's sales that opens in Excel, one row per item bought)
+  It keeps the last 30 days, and cleans up older copies itself.
+- USB PENDRIVE (automatic): if a USB stick is plugged in, the same
+  two files are also copied automatically into a "BobaPOS Backups"
+  folder on the stick (the stick can stay in the machine all day).
+  To copy to a fixed drive/folder instead, set USB_BACKUP_DIR:
+      set USB_BACKUP_DIR=E:\BobaPOS Backups
+  in start_pos.cmd before the server starts. A perpetual safety-net
+  (even if nobody closes for the day):
+      1. Right-click  windows\install_backup.cmd  -> Run
+      2. It schedules a daily backup at 11:00 PM that copies the
+         database locally + to any plugged-in USB stick.
+      - Undo:  windows\remove_backup.cmd
+- The Sales page also has a "Download report (Excel/CSV)" button:
+  pick any date range and it downloads the sales as a spreadsheet
+  you can open on any office computer (Excel/LibreOffice/Google Sheets).
 
 FIREWALL
 --------
@@ -89,4 +104,5 @@ WHAT IS WHERE
   backend\db\migrations\    database schema versions
   frontend\dist\            the POS web app itself (served by the server)
   backend\data\pos.db       ALL shop data (back this up)
+  backend\data\backups\     automatic daily copies (db + csv)
   backend\data\server.log   server log file

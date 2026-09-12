@@ -282,6 +282,20 @@ test('dashboard: summary is well-formed', async () => {
   assert.ok(Array.isArray(res.body.data.low_stock));
 });
 
+test('export: sales CSV requires auth and is a spreadsheet', async () => {
+  await request(app).get('/api/export/sales').expect(401);
+
+  const a = await ownerAgent();
+  const res = await a.get('/api/export/sales').expect(200);
+  assert.match(res.headers['content-type'], /text\/csv/);
+  assert.match(res.headers['content-disposition'], /attachment/);
+  // BOM strips for Excel, then the header row.
+  assert.match(res.text.replace(/^\uFEFF/, ''), /^Date,Time,Order #,Product,Size,Toppings,Qty,Unit price/);
+  // seeded sales from earlier tests are inside the CSV, with prices in GH₵.
+  assert.match(res.text, /BROWN SUGAR MILK TEA BOBA|BLUEBERRY MILK TEA BOBA|Tapioca/);
+  assert.match(res.text, /Cash,Mavis Ampim,COMPLETED/);
+});
+
 test('settings: owner can read/update, cashier denied', async () => {
   const a = await ownerAgent();
   const s = await a.get('/api/settings').expect(200);

@@ -56,3 +56,28 @@ export function patch(path, body) {
 export function del(path) {
   return request(path, { method: 'DELETE' })
 }
+
+export async function downloadFile(path, params, filename) {
+  let url = `${API_BASE}${path}`
+  if (params) {
+    const searchParams = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+      if (value != null) searchParams.append(key, value)
+    }
+    const qs = searchParams.toString()
+    if (qs) url += `?${qs}`
+  }
+
+  const res = await fetch(url, { method: 'GET', credentials: 'include' })
+  if (!res.ok) {
+    throw new Error(`Download failed (${res.status}). Try again.`)
+  }
+  const blob = await res.blob()
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(link.href)
+}

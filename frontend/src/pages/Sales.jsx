@@ -33,6 +33,19 @@ export default function Sales() {
   const [detailError, setDetailError] = useState(null)
   const [confirm, setConfirm] = useState(null)
   const [currencySymbol, setCurrencySymbol] = useState('GH₵')
+  const [exporting, setExporting] = useState(false)
+
+  const downloadReport = () => {
+    setExporting(true)
+    const from = filters.from || ''
+    const to = filters.to || ''
+    const range = [from, to].filter(Boolean).join('_to_') || 'all'
+    api
+      .downloadFile('/export/sales', { from: from || undefined, to: to || undefined }, `boba-sales-${range}.csv`)
+      .then(() => addToast('Spreadsheet downloaded.'))
+      .catch((e) => addToast(e.message, 'error'))
+      .finally(() => setExporting(false))
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(filters), 350)
@@ -107,6 +120,12 @@ export default function Sales() {
       </div>
 
       <div className="card mb-md">
+        <div className="flex items-center justify-between mb-sm">
+          <span className="text-muted text-sm">Filter sales, then download a spreadsheet that opens in Excel.</span>
+          <button className="btn btn-secondary btn-sm" onClick={downloadReport} disabled={exporting}>
+            {exporting ? 'Preparing…' : '⬇ Download report (Excel/CSV)'}
+          </button>
+        </div>
         <div className="grid-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
           <div className="input-group">
             <label htmlFor="s-from">From</label>

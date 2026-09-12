@@ -17,11 +17,14 @@ if (typeof __filename === 'string' && typeof __dirname === 'string') {
 const backendRoot = path.resolve(here, '..');
 const defaultDbPath = path.join(backendRoot, 'data', 'pos.db');
 const defaultUploadsDir = path.join(backendRoot, 'data', 'uploads');
+const defaultBackupDir = path.join(backendRoot, 'data', 'backups');
 
 export const config = {
   port: Number(env('APP_PORT', '4000')),
   dbPath: env('DB_PATH', defaultDbPath),
   uploadsDir: env('UPLOADS_DIR', defaultUploadsDir),
+  backupDir: env('BACKUPS_DIR', defaultBackupDir),
+  usbBackupDir: env('USB_BACKUP_DIR', ''),
   migrationsDir: env('MIGRATIONS_DIR', path.join(backendRoot, 'db', 'migrations')),
   frontendDist: env(
     'FRONTEND_DIST',
