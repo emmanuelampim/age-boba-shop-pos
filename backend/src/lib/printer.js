@@ -21,9 +21,28 @@ export function canPrintLocally() {
 
 const USE_RAW = process.env.PRINTER_RAW !== '0';
 
-// Print density (grayscale) 0–8, where 8 is darkest. Runs on every receipt
-// because ESC @ (which resets it) is sent at the start of each job.
+// Print darkness for the XP-90/E200L. The shop wants receipts as deep as the
+// printer will go, so every job turns on every darkness lever the printer
+// understands:
+//   - ESC m n    : font grayscale 0–8 (Chinese-ESC/POS printers), 8 = darkest
+//   - GS ( K fn 49 m : Epson select print density, m = 8 (~140% of standard)
+//   - GS E n     : print density 0–3 (Wizarpos/XPrinter), 3 = darker
+//   - ESC E n    : emphasized (bold) text
+//   - ESC G n    : double-strike text (each dot fired twice)
+// Unsupported commands are silently ignored, so sending them all is safe.
+// They must come after ESC @ (which would clear them) and are re-sent on
+// every job because ESC @ also resets the printer state each time.
 const PRINTER_DENSITY = Math.max(0, Math.min(8, Number(process.env.PRINTER_DENSITY ?? 8) || 8));
+
+export function buildDarkPrintHeader() {
+  return Buffer.from([
+    0x1b, 0x6d, PRINTER_DENSITY, // ESC m n : font grayscale (8 = darkest)
+    0x1d, 0x28, 0x4b, 0x02, 0x00, 0x31, 0x08, // GS ( K fn=49 : print density m=8 (~140%)
+    0x1d, 0x45, 0x03, // GS E n : print density darkest (0–3)
+    0x1b, 0x45, 0x01, // ESC E 1 : bold
+    0x1b, 0x47, 0x01, // ESC G 1 : double-strike
+  ]);
+}
 
 // Keep only characters a thermal printer's built-in font can render.
 // The Ghana cedi sign (U+20B5) is not in ESC/POS fonts — print "GH¢" instead
@@ -59,7 +78,7 @@ export function buildEscPosBytes(text) {
   return Buffer.concat([
     Buffer.from([0x1b, 0x40]), // ESC @ : initialize printer
     Buffer.from([0x1b, 0x74, 0x10]), // ESC t 16 : Windows-1252 (so ¢ renders)
-    Buffer.from([0x1b, 0x6d, PRINTER_DENSITY]), // ESC m n : print grayscale 0–8 (8 = darkest)
+    buildDarkPrintHeader(),
     body,
     Buffer.from('\n\n\n'), // trailing feed so the blade clears the last line
     Buffer.from([0x1d, 0x56, 0x42, 0x02, 0x01]), // GS V B n=2 m=1 : feed + partial cut
