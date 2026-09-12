@@ -9,7 +9,7 @@ const WRITE_SQL_RE = /^\s*(INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|VACUUM
 function normalizeParams(params) {
   if (params == null) return [];
   return params.map((v) => {
-    if (v === undefined) return null;
+    if (v === undefined || v === null) return null;
     if (typeof v === 'boolean') return v ? 1 : 0;
     if (v instanceof Uint8Array || typeof v === 'string') return v;
     const num = Number(v);

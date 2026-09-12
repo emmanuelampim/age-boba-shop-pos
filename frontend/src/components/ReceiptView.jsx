@@ -65,6 +65,18 @@ export default function ReceiptView({ order, settings }) {
         <span>Payment</span>
         <span className="num">{r.paymentMethod}</span>
       </div>
+      {r.customerPhone && (
+        <div className="receipt-line">
+          <span>Customer phone</span>
+          <span className="num">{r.customerPhone}</span>
+        </div>
+      )}
+      {r.paymentRef && (
+        <div className="receipt-line">
+          <span>MoMo TXN</span>
+          <span className="num">{r.paymentRef}</span>
+        </div>
+      )}
       {r.servedBy && (
         <div className="receipt-line">
           <span>Served by</span>

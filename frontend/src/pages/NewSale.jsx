@@ -34,6 +34,8 @@ export default function NewSale() {
   const [payMethod, setPayMethod] = useState(null)
   const [discountInput, setDiscountInput] = useState('')
   const [notes, setNotes] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [paymentRef, setPaymentRef] = useState('')
   const [settings, setSettings] = useState({})
   const [requestId, setRequestId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -128,6 +130,8 @@ export default function NewSale() {
         paymentMethodId: payMethod,
         discount: discountCents,
         notes,
+        customerPhone: customerPhone.trim() || undefined,
+        paymentRef: paymentRef.trim() || undefined,
         items: items.map((i) => ({
           productId: i.productId,
           ...(i.sizeId ? { sizeId: i.sizeId } : {}),
@@ -148,6 +152,8 @@ export default function NewSale() {
       setReviewOpen(false)
       setDiscountInput('')
       setNotes('')
+      setCustomerPhone('')
+      setPaymentRef('')
       setReceipt(order)
     } catch (e) {
       addToast(e.message, 'error')
@@ -161,6 +167,9 @@ export default function NewSale() {
   }
 
   const selectedPayName = paymentMethods.find((m) => m.id === payMethod)?.name || ''
+  const momoPay = paymentMethods.find((m) => m.code === 'MOMO')?.id ?? null
+  const isMoMo = payMethod === momoPay
+  const momoMissingContact = isMoMo && !customerPhone.trim() && !paymentRef.trim()
 
   const draftOrder = {
     order_number_display: '—',
@@ -177,6 +186,8 @@ export default function NewSale() {
     discount: discountCents,
     total: displayTotal,
     payment_method: selectedPayName || '—',
+    customer_phone: customerPhone.trim() || '',
+    payment_ref: paymentRef.trim() || '',
     user: { name: user?.name },
   }
 
@@ -389,6 +400,40 @@ export default function NewSale() {
           ))}
         </div>
 
+        {isMoMo && (
+          <div className="mt-md">
+            <div className="text-sm text-muted mb-sm">Mobile Money details — at least one is required</div>
+            <div className="input-group">
+              <label htmlFor="customer-phone">Customer phone number</label>
+              <input
+                id="customer-phone"
+                className="input"
+                type="tel"
+                inputMode="tel"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="e.g. 0241234567"
+                maxLength={40}
+              />
+            </div>
+            <div className="input-group mt-sm">
+              <label htmlFor="payment-ref">Transaction number (from the phone)</label>
+              <input
+                id="payment-ref"
+                className="input"
+                type="text"
+                value={paymentRef}
+                onChange={(e) => setPaymentRef(e.target.value)}
+                placeholder="e.g. MFR123456789"
+                maxLength={64}
+              />
+            </div>
+            {momoMissingContact && (
+              <div className="login-error mt-sm" role="alert">Enter the customer&apos;s phone number or the transaction number.</div>
+            )}
+          </div>
+        )}
+
         <div className="input-group mt-md">
           <label htmlFor="notes">Notes (optional)</label>
           <input id="notes" className="input" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200} placeholder="e.g. table number" />
@@ -400,7 +445,7 @@ export default function NewSale() {
 
         <button
           className="btn btn-primary btn-lg w-full mt-md"
-          disabled={discountCents > subtotal || !payMethod}
+          disabled={discountCents > subtotal || !payMethod || momoMissingContact}
           onClick={() => { setCheckoutOpen(false); setReviewOpen(true) }}
         >
           Review order & receipt
@@ -413,9 +458,11 @@ export default function NewSale() {
         <div className="mt-md text-sm text-muted">
           {!payMethod
             ? 'Select a payment method before confirming.'
-            : discountCents > subtotal
-              ? 'Fix the discount before confirming.'
-              : 'Confirming finalizes the sale and allows printing. Double-check items, prices and payment.'}
+            : momoMissingContact
+              ? 'Enter the customer phone number or Mobile Money transaction number before confirming.'
+              : discountCents > subtotal
+                ? 'Fix the discount before confirming.'
+                : 'Confirming finalizes the sale and allows printing. Double-check items, prices and payment.'}
         </div>
         <div className="flex gap-sm mt-md">
           <button className="btn" disabled={submitting} onClick={() => { setReviewOpen(false); setCheckoutOpen(true) }}>
@@ -423,7 +470,7 @@ export default function NewSale() {
           </button>
           <button
             className="btn btn-success btn-lg w-full"
-            disabled={submitting || !payMethod || discountCents > subtotal}
+            disabled={submitting || !payMethod || momoMissingContact || discountCents > subtotal}
             onClick={completeSale}
           >
             {submitting ? 'Confirming sale…' : `Confirm sale · ${c(displayTotal)}`}

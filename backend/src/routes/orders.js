@@ -32,6 +32,8 @@ export function createRouter() {
         paymentMethodId: input.paymentMethodId,
         discount: input.discount ?? 0,
         notes: input.notes ?? null,
+        customerPhone: input.customerPhone ?? null,
+        paymentRef: input.paymentRef ?? null,
         items: input.items,
         user: req.user,
       });

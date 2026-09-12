@@ -35,6 +35,7 @@ export function ordersToCsvRows({ from, to } = {}) {
   const orders = db
     .prepare(
       `SELECT o.id, o.order_number, o.created_at, o.subtotal, o.discount, o.total, o.status, o.payment_method,
+              o.customer_phone, o.payment_ref,
               u.name AS user_name
        FROM orders o
        JOIN users u ON u.id = o.user_id
@@ -79,6 +80,8 @@ export function ordersToCsvRows({ from, to } = {}) {
         Payment: o.payment_method ?? '',
         Staff: o.user_name ?? '',
         Status: o.status ?? '',
+        'Customer phone': o.customer_phone ?? '',
+        'Payment ref': o.payment_ref ?? '',
       });
     }
   }
@@ -98,7 +101,7 @@ export function toCsv(rows) {
 }
 
 export function csvHeader() {
-  return 'Date,Time,Order #,Product,Size,Toppings,Qty,Unit price (GH₵),Line total (GH₵),Order subtotal (GH₵),Discount (GH₵),Order total (GH₵),Payment,Staff,Status\r\n';
+  return 'Date,Time,Order #,Product,Size,Toppings,Qty,Unit price (GH₵),Line total (GH₵),Order subtotal (GH₵),Discount (GH₵),Order total (GH₵),Payment,Staff,Status,Customer phone,Payment ref\r\n';
 }
 
 export function buildDailyCsv(dateStr = dayStamp()) {

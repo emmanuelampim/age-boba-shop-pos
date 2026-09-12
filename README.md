@@ -169,6 +169,8 @@ Common response shapes:
   "paymentMethodId": 1,
   "discount": 350,                       // GH₵3.50 in pesewas (server-validated, not trusted blindly)
   "notes": "",
+  "customerPhone": "0241234567",         // REQUIRED for Mobile Money payment (either this…)
+  "paymentRef": "MFR123456789",          // …or the transaction number. Optional for cash.
   "items": [
     { "productId": 1, "sizeId": 3, "quantity": 2,
       "toppingIds": [1, 2] }
@@ -177,6 +179,8 @@ Common response shapes:
 ```
 
 The server looks up **current** prices, validates availability/stock, computes subtotal/discount/total, snapshots names+prices, deducts inventory, generates `#000…` order number, and commits atomically. Duplicate `requestId` → returns the original order with `"duplicate": true` (HTTP 200), never a second sale.
+
+**Mobile Money**: when the active payment method has `code === 'MOMO'`, the server **requires** a traceable reference — either `customerPhone` (a valid Ghana phone, accepted in formats like `0241234567`, `+233 24 123 4567` — stored normalized as `0241234567`) or `paymentRef` (the transaction number from the MoMo prompt). Both are stored on the order, shown on the receipt, and included in the spreadsheet export. Payment methods are configurable in Settings → Payment methods; only methods with `code = 'MOMO'` enforce this.
 
 ### Inventory adjust example
 

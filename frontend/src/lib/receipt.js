@@ -34,6 +34,8 @@ export function buildReceiptLines(order, settings) {
     discount: order.discount || 0,
     total: order.total,
     paymentMethod: order.payment_method || "—",
+    customerPhone: order.customer_phone || "",
+    paymentRef: order.payment_ref || "",
     servedBy: order.user?.name,
     footer: settings.receipt_footer,
     currencySymbol,

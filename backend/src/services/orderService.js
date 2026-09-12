@@ -6,6 +6,14 @@ import { todayStartUtc, todayEndUtc } from '../lib/time.js';
 
 const ORDER_STATUSES = ['COMPLETED', 'CANCELLED', 'REFUNDED'];
 const MAX_LINE_QUANTITY = 999;
+const PHONE_RE = /^0\d{9}$/;
+
+export function normalizePhone(value) {
+  if (value == null) return '';
+  let s = String(value).replace(/[\s\-()]/g, '');
+  if (s.startsWith('+')) s = s.replace(/^\+?233/, '0');
+  return s;
+}
 
 function formatOrderNumber(n) {
   return `#${String(n).padStart(6, '0')}`;
@@ -165,10 +173,36 @@ export function validateOrderPayload(input) {
   if (input.notes !== undefined && (typeof input.notes !== 'string' || input.notes.length > 500)) {
     errs.push('notes must be a string of 500 characters or fewer.');
   }
+  if (input.customerPhone !== undefined) {
+    if (typeof input.customerPhone !== 'string' || input.customerPhone.length === 0) {
+      errs.push('customerPhone must be a non-empty string.');
+    } else if (input.customerPhone.length > 40) {
+      errs.push('customerPhone must be 40 characters or fewer.');
+    } else if (!PHONE_RE.test(normalizePhone(input.customerPhone))) {
+      errs.push('customerPhone must be a valid phone number (e.g. 0241234567).');
+    }
+  }
+  if (input.paymentRef !== undefined) {
+    if (typeof input.paymentRef !== 'string' || input.paymentRef.trim().length === 0) {
+      errs.push('paymentRef must be a non-empty string.');
+    } else if (input.paymentRef.trim().length > 64) {
+      errs.push('paymentRef must be 64 characters or fewer.');
+    }
+  }
   return errs.join(' ') || null;
 }
 
-export function createOrder({ requestId = null, branchId, paymentMethodId, discount = 0, notes = null, items, user }) {
+export function createOrder({
+  requestId = null,
+  branchId,
+  paymentMethodId,
+  discount = 0,
+  notes = null,
+  items,
+  customerPhone = null,
+  paymentRef = null,
+  user,
+}) {
   const result = transaction(() => {
     const db = getDb();
 
@@ -182,6 +216,26 @@ export function createOrder({ requestId = null, branchId, paymentMethodId, disco
 
     const payment = db.prepare('SELECT * FROM payment_methods WHERE id = ? AND is_active = 1').get(paymentMethodId);
     if (!payment) throw new AppError(400, 'PAYMENT_METHOD_NOT_AVAILABLE', 'Payment method is not available.');
+
+    const phone = customerPhone ? normalizePhone(customerPhone) : '';
+    const ref = paymentRef != null ? String(paymentRef).trim() : '';
+    // Mobile Money needs a way to trace the payment: the customer's phone
+    // number or the transaction number from the MoMo prompt.
+    if (payment.code === 'MOMO' && !phone && !ref) {
+      throw new AppError(
+        400,
+        'PAYMENT_CONTACT_REQUIRED',
+        'Customer phone number or Mobile Money transaction number is required.',
+      );
+    }
+    if (payment.code === 'MOMO') {
+      if (phone && !PHONE_RE.test(phone)) {
+        throw new AppError(400, 'INVALID_PHONE', 'Customer phone number is invalid (e.g. use 0241234567).');
+      }
+    }
+    if (phone && !PHONE_RE.test(phone)) {
+      throw new AppError(400, 'INVALID_PHONE', 'Customer phone number is invalid (e.g. use 0241234567).');
+    }
 
     if (!Array.isArray(items) || items.length === 0) {
       throw new AppError(400, 'EMPTY_ORDER', 'Cannot create an order with no items.');
@@ -296,8 +350,8 @@ export function createOrder({ requestId = null, branchId, paymentMethodId, disco
       .prepare(
         `INSERT INTO orders
            (order_number, request_id, branch_id, user_id, subtotal, discount, total,
-            payment_method_id, payment_method, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?, ?)`,
+            payment_method_id, payment_method, customer_phone, payment_ref, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?, ?)`,
       )
       .run(
         orderNumber,
@@ -309,6 +363,8 @@ export function createOrder({ requestId = null, branchId, paymentMethodId, disco
         total,
         payment.id,
         payment.name,
+        phone || null,
+        ref || null,
         now,
         now,
       );

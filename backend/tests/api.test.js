@@ -258,6 +258,47 @@ test('validation: empty basket and duplicate toppings rejected', async () => {
   assert.equal(res.body.error.code, 'VALIDATION_ERROR');
 });
 
+test('orders: Mobile Money requires a customer phone or transaction number', async () => {
+  const a = await ownerAgent();
+  const boba = await listBoba(a);
+  const sizeId = boba.sizes.find((s) => s.code === 'LARGE').id;
+
+  // MoMo without any contact info is rejected.
+  const missing = await a
+    .post('/api/orders')
+    .send({ requestId: `e2e-momo-missing-${Date.now()}`, branchId: 1, paymentMethodId: 2, items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .expect(400);
+  assert.equal(missing.body.error.code, 'PAYMENT_CONTACT_REQUIRED');
+
+  // MoMo with an invalid phone is rejected at validation time.
+  const badPhone = await a
+    .post('/api/orders')
+    .send({ requestId: `e2e-momo-bad-${Date.now()}`, branchId: 1, paymentMethodId: 2, customerPhone: 'abc', items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .expect(400);
+  assert.equal(badPhone.body.error.code, 'VALIDATION_ERROR');
+
+  // MoMo with a phone is accepted and normalized.
+  const withPhone = await a
+    .post('/api/orders')
+    .send({ requestId: `e2e-momo-phone-${Date.now()}`, branchId: 1, paymentMethodId: 2, customerPhone: '+233 24 123 4567', items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .expect(201);
+  assert.equal(withPhone.body.data.customer_phone, '0241234567');
+
+  // MoMo with a transaction number (no phone) is accepted.
+  const withRef = await a
+    .post('/api/orders')
+    .send({ requestId: `e2e-momo-ref-${Date.now()}`, branchId: 1, paymentMethodId: 2, paymentRef: 'MFR999999999', items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .expect(201);
+  assert.equal(withRef.body.data.payment_ref, 'MFR999999999');
+
+  // Cash has no contact requirement.
+  const cash = await a
+    .post('/api/orders')
+    .send({ requestId: `e2e-cash-${Date.now()}`, branchId: 1, paymentMethodId: 1, items: [{ productId: boba.id, sizeId, quantity: 1, toppingIds: [] }] })
+    .expect(201);
+  assert.equal(cash.body.data.customer_phone, null);
+});
+
 test('inventory: restock, waste rejection, history', async () => {
   const a = await ownerAgent();
   const restock = await a
