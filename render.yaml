@@ -1,0 +1,35 @@
+# Render blueprint for AGE BOBA SHOP POS
+# Deploy: New > Blueprint > pick this repository > Apply.
+# Requires a paid (Starter or higher) Web Service — a persistent disk is
+# mandatory because the SQLite database + backups must survive redeploys.
+services:
+  - type: web
+    name: age-boba-pos
+    runtime: node
+    plan: starter
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: boba-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: DB_PATH
+        value: /var/data/pos.db
+      - key: BACKUPS_DIR
+        value: /var/data/backups
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
+      - key: BACKUP_AT
+        value: "23:55"
+      - key: FRONTEND_DIST
+        value: frontend/dist

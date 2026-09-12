@@ -1,0 +1,73 @@
+AGE BOBA SHOP POS  -  RENDER DEPLOY GUIDE
+=========================================
+
+This explains how to put the POS on the web at Render.com so ANY device
+(shop PC, tablet, phone) can open it in a browser and run sales.
+
+WHAT RUNS THE SITE
+------------------
+- A single Node.js web service (the existing backend) that also serves
+  the website, so there is no separate frontend server.
+- The SQLite database lives on a persistent disk that survives redeploys.
+- Backups run automatically every day at 23:55 (server time = Accra/UTC)
+  and also on demand via "Close for the day".
+
+STEP 1 - PREP (once)
+--------------------
+1. Create an account at https://render.com (sign up with GitHub).
+2. The Web Service must be paid (Starter plan or higher) because Render
+   only allows persistent disks on paid services. A 1 GB disk is ~$0.25/mo.
+
+STEP 2 - DEPLOY WITH THE BLUEPRINT (easiest)
+--------------------------------------------
+1. On Render:  New -> Blueprint
+2. Connect the repository: emmanuelampim/age-boba-shop-pos
+3. Apply the blueprint. It creates the web service "age-boba-pos" with the
+   disk and all environment variables from the file render.yaml.
+4. One variable is left for you to fill in:
+     JWT_SECRET  -> click "Value", choose Generate, or type your own long
+                    random string (this signs logins; never share it).
+5. Apply & Deploy. Wait for it to say "Live" (first build takes ~3 min).
+6. Open the service dashboard -> your URL looks like:
+     https://age-boba-pos.onrender.com
+
+STEP 3 - FIRST LOGIN AND SECURITY (IMPORTANT)
+---------------------------------------------
+1. Open your URL in a browser.
+2. Log in with the seeded owner:
+     mavisampim@gmail.com  /  Owner@123
+3. IMMEDIATELY change it: Settings -> Staff & roles -> click the owner
+   account -> set a new strong password. The server logs a loud warning
+   until you do (default_owner_password_still_active).
+
+STEP 4 - GIVE THE SHOP MACHINE ACCESS
+-------------------------------------
+Windows 7 shop PC already has Chrome. Its "launcher" is now simply:
+  open the URL https://age-boba-pos.onrender.com  and log in.
+No Node, no localhost, no download needed anymore.
+Set it as a Chrome shortcut on the desktop:
+  right-click desktop -> New -> Shortcut ->
+  paste the URL -> Save.
+The customer display still works the same way (open it from the POS page,
+it opens on the second screen of that machine in the same browser).
+
+STEP 5 - USEFUL SETTINGS
+------------------------
+- Env vars (Dashboard -> Web Service -> Environment) are already set by the
+  blueprint. If anything breaks you can see logs under "Logs".
+- Backup files: the persistent disk at /var/data/backups (pos-YYYY-MM-DD.db
+  and sales-YYYY-MM-DD.csv). To download one: Dashboard -> Disks -> connect,
+  or use a one-off Shell from the service to copy files out of the disk.
+- The daily automatic backup happens at 23:55. "Close for the day" also
+  makes an immediate backup but keeps the server running on the web.
+
+IMPORTANT REALITY CHECK
+-----------------------
+- Internet is now REQUIRED (it is web hosting).
+- The database lives on Render, not on the shop PC. Every device sees the
+  same live data.
+- Both your browsers must be on modern Chrome/Edge/Safari/Firefox.
+  (The Windows 7 shop PC uses Chrome 109 - fine.)
+- Never share the JWT_SECRET or the owner password.
+- Render free services spin down when idle; this is why the paid plan is
+  required. Customer display + sales need the server to stay awake.

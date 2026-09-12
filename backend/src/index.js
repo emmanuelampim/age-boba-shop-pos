@@ -3,6 +3,8 @@ import { createApp } from './app.js';
 import { getDb, initDatabase } from './db/connection.js';
 import { runMigrations } from './db/migrate.js';
 import { seed } from './seed.js';
+import { verifyPassword } from './lib/crypto.js';
+import { scheduleDailyBackup } from './lib/dailyBackup.js';
 import { logger } from './lib/logger.js';
 
 async function main() {
@@ -16,6 +18,17 @@ async function main() {
   if (needsSeed) {
     await seed(db);
     logger.info('seeded_default_data');
+  }
+
+  if (config.isProduction) {
+    const owner = db.prepare("SELECT * FROM users WHERE role = 'OWNER' LIMIT 1").get();
+    if (owner && verifyPassword('Owner@123', owner.password_hash)) {
+      logger.warn('default_owner_password_still_active', { email: owner.email });
+    }
+  }
+
+  if (!config.testing) {
+    scheduleDailyBackup();
   }
 
   const app = await createApp({ runMigrationsOnStart: false });

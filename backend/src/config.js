@@ -20,7 +20,7 @@ const defaultUploadsDir = path.join(backendRoot, 'data', 'uploads');
 const defaultBackupDir = path.join(backendRoot, 'data', 'backups');
 
 export const config = {
-  port: Number(env('APP_PORT', '4000')),
+  port: Number(env('APP_PORT', env('PORT', '4000'))),
   dbPath: env('DB_PATH', defaultDbPath),
   uploadsDir: env('UPLOADS_DIR', defaultUploadsDir),
   backupDir: env('BACKUPS_DIR', defaultBackupDir),
@@ -34,6 +34,7 @@ export const config = {
   jwtTtl: Number(env('JWT_TTL', '86400')),
   trustProxy: env('TRUST_PROXY', 'false') === 'true',
   cookieSecure: env('COOKIE_SECURE', 'false') === 'true',
+  backupSchedule: env('BACKUP_AT', '23:55'),
   logLevel: env('LOG_LEVEL', 'info'),
   isProduction: env('NODE_ENV', 'development') === 'production',
   testing: env('NODE_ENV', 'development') === 'test',

@@ -3,6 +3,7 @@ import { getDb, closeDb } from '../db/connection.js';
 import { authenticate } from '../middleware/auth.js';
 import { ok, sendError } from '../lib/http.js';
 import { createDailyBackup, buildDailyCsv } from '../services/backupService.js';
+import { config } from '../config.js';
 import { logger } from '../lib/logger.js';
 
 let shuttingDown = false;
@@ -20,6 +21,24 @@ export function createRouter() {
 
       // Build the spreadsheet copy of today's sales while the DB is open.
       const csv = buildDailyCsv();
+
+      // On web hosting the server must stay up: the database is persisted
+      // continuously, so a fresh Excel copy + a full DB snapshot is enough.
+      // On the offline shop PC we close the DB and exit as before.
+      if (config.isProduction) {
+        const backup = createDailyBackup({ csvContent: csv });
+        shuttingDown = false;
+        logger.info('day_closed', { user: req.user?.email ?? 'unknown', stayedUp: true });
+        return ok(res, {
+          saved: true,
+          message: 'All data saved. The server stays running.',
+          backup: {
+            files: backup.local,
+            usb: backup.usb,
+            csvWritten: backup.csv,
+          },
+        });
+      }
 
       closeDb();
 
