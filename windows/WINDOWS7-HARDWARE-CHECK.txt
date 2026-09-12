@@ -1,0 +1,87 @@
+AGE BOBA SHOP POS  -  WINDOWS 7 HARDWARE CHECK
+================================================
+
+WHY THIS FILE EXISTS
+--------------------
+We are preparing a standalone "double-click to open the POS" version
+that will work on this machine with NO typing and NO Node/npm commands.
+Before building it, we need a few facts about THIS exact machine so we
+choose everything (program, printer drive, screens) to suit it.
+
+Anyone at the shop can do this. No developer needed.
+
+------------------------------------------------
+EASIEST WAY (recommended): one double-click
+------------------------------------------------
+On this Windows 7 PC:
+
+1. Put this folder (whichever drive or USB it came on) in a place that
+   is easy to find (e.g. the Desktop).
+2. Double-click the file named:
+
+       WINDOWS7-HARDWARE-CHECK.cmd
+
+3. A black window runs for about 30 seconds. When it says "Done",
+   press a key to close it.
+4. On the Desktop there is now a file called:
+
+       HARDWARE-INFO.txt
+
+5. Copy HARDWARE-INFO.txt back to us (USB drive is fine) OR read it
+   and send the text in a message/email.
+
+That's it. The rest of this file is only needed if the .cmd cannot
+run for some reason.
+
+------------------------------------------------
+ALTERNATIVE (if the .cmd will not run)
+------------------------------------------------
+Open a Command Prompt (click the Start button, type:  cmd, press Enter),
+then type each line below and press Enter after each. Copy whatever it
+prints and send it back. Or, even easier, run this single command which
+copies EVERYTHING into one file:
+
+    wmic > %USERPROFILE%\Desktop\HARDWARE-INFO.txt 2>&1
+
+If wmic gives no output, run these one at a time and send the results:
+
+    echo %PROCESSOR_ARCHITECTURE%      (x86 = 32-bit, AMD64 = 64-bit)
+    wmic os get Caption,ServicePackMajorVersion
+    wmic cpu get Name
+    wmic ComputerSystem get TotalPhysicalMemory
+    wmic LogicalDisk get DeviceID,Size,FreeSpace
+    wmic path Win32_VideoController get Name,CurrentHorizontalResolution,CurrentVerticalResolution
+    wmic printer get Name,PortName,Default
+    wmic path Win32_USBController get Name
+    wmic timezone get Caption
+    systeminfo | findstr /C:"System Locale" /C:"Input Locale"
+
+And tell us, in words:
+
+    A) Which is the CASHIER screen and which is the CUSTOMER screen
+       (left/right, or A/B)?
+    B) Does this PC have internet access right now? (Yes/No)
+    C) What is plugged into each USB port?
+       (printer, mouse, keyboard, flash drive)
+    D) Is the cash register area normally near a wall power outlet?
+
+------------------------------------------------
+WHAT THESE FACTS ARE FOR  (you do not need to act on this)
+------------------------------------------------
+- Windows edition + Service Pack : confirms Windows 7 SP1, which the
+  POS software is guaranteed against.
+- 32-bit confirmation             : the POS build MUST be 32-bit (x86).
+- CPU + RAM                       : tells us the PC is fast enough and
+  helps pick the program size.
+- Free disk space                 : the POS + backups need about 200 MB.
+- Graphics + resolutions          : helps set up the two screens.
+- Printer name + port             : the receipt printer driver is
+  matched to exactly this printer.
+- Browsers                        : fallback knowledge only.
+- Node.js / Python presence       : lets us know what is already there.
+- USB controllers                 : confirms the printer can plug in.
+- Locale / time / date format     : receipts will match Ghana's date
+  and time style and Africa/Accra time.
+
+Send back the HARDWARE-INFO.txt (or the answers to A-D) and we will
+prepare the installer to fit this machine exactly.
