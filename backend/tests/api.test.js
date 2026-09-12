@@ -481,6 +481,20 @@ test('users: owner can list and update users (no user creation API)', async () =
   await cashier.get('/api/users').expect(403);
 });
 
+test('users: the last active owner cannot be deactivated (lockout guard)', async () => {
+  const a = await ownerAgent();
+  const me = (await a.get('/api/auth/me').expect(200)).body.data;
+  assert.equal(me.role, 'OWNER');
+
+  // One active owner exists -> deactivating them must be refused.
+  const res = await a.patch(`/api/users/${me.id}`).send({ status: 'INACTIVE' }).expect(409);
+  assert.equal(res.body.error.code, 'LAST_OWNER');
+
+  // Profile still active afterwards.
+  const after = await a.get('/api/auth/me').expect(200);
+  assert.equal(after.body.data.status, 'ACTIVE');
+});
+
 test('permissions: cashier can read but not write admin resources', async () => {
   const cashier = await cashierAgent();
   await cashier.post('/api/inventory/adjust').send({ itemId: 1, type: 'RESTOCK', quantity: 1 }).expect(403);

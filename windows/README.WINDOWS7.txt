@@ -1,6 +1,11 @@
 BOBA POS - WINDOWS 7 SETUP (local POS machine)
 ================================================
 
+Follow these documents, in order:
+  1. WINDOWS-7-SETUP-GUIDE.txt      - install everything (17 steps)
+  2. DAILY-USE-GUIDE.txt            - how the cashier runs a normal day
+  3. TROUBLESHOOTING-WINDOWS-7.txt  - what to do when something is wrong
+
 This folder runs the POS entirely on the shop's computer. No internet
 required after setup. The server + data live here; a web browser is the
 screen facing the cashier.
@@ -118,7 +123,8 @@ WHAT IS WHERE
 -------------
   backend\dist\server.cjs   the whole server (self-contained)
   backend\dist\sql-wasm.wasm  SQLite engine used by the server
-  backend\db\migrations\    database schema versions
+  backend\db\migrations\    database schema versions (ship WITH the
+                            package.json inside it)
   frontend\dist\            the POS web app itself (served by the server)
   backend\data\pos.db       ALL shop data (back this up)
   backend\data\backups\     automatic daily copies (db + csv)

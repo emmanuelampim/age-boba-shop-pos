@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { config } from './config.js';
 import { getDb } from './db/connection.js';
-import { sendError } from './lib/http.js';
+import { sendError, AppError } from './lib/http.js';
 import { runMigrations } from './db/migrate.js';
 import { createLimiter } from './lib/rateLimit.js';
 import * as authRoutes from './routes/auth.js';
@@ -25,8 +25,12 @@ function cookieParser(req, _res, next) {
       const idx = part.indexOf('=');
       if (idx === -1) continue;
       const key = part.slice(0, idx).trim();
-      const value = part.slice(idx + 1).trim();
-      req.cookies[key] = decodeURIComponent(value);
+      const raw = part.slice(idx + 1).trim();
+      try {
+        req.cookies[key] = decodeURIComponent(raw);
+      } catch {
+        req.cookies[key] = raw;
+      }
     }
   }
   next();
@@ -104,7 +108,18 @@ export async function createApp({ runMigrationsOnStart = true } = {}) {
   app.use((err, req, res, _next) => {
     if (res.headersSent) return;
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-      return sendError(res, Object.assign(new Error('Invalid JSON body.'), { status: 400, code: 'INVALID_JSON' }));
+      return sendError(res, new AppError(400, 'INVALID_JSON', 'Invalid JSON body.'));
+    }
+    // Expected business rejections (validation/not-found/etc.) are logged at
+    // warn level; only unexpected failures get the full error log.
+    if (err instanceof AppError) {
+      logger.warn('request_rejected', {
+        path: req.originalUrl,
+        method: req.method,
+        code: err.code,
+        status: err.status,
+      });
+      return sendError(res, err);
     }
     logger.error('request_error', { path: req.originalUrl, method: req.method, message: err.message });
     return sendError(res, err);

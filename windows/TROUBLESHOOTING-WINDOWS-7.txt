@@ -1,0 +1,218 @@
+TROUBLESHOOTING - AGE BOBA SHOP POS (WINDOWS 7)
+===============================================
+
+For the owner or the person who set up the shop. Most problems have a
+simple fix in this guide. If a fix here tells you to "paste the error",
+open the black window first:
+
+  1. Press the Windows key, type cmd, press Enter.
+  2. Type:  cd C:\boba-pos
+  3. Type:  node backend\dist\server.cjs
+  4. Copy everything it prints. That text (the "error message" or
+     "stack trace") is what support needs.
+
+The server's running log is also in:  C:\boba-pos\backend\data\server.log
+Browsing the log: open it in Notepad and read the LAST lines.
+
+--------------------------------------------------
+A. THE SERVER WON'T START / "BOBA POS SERVER" WINDOW FLASHES AND CLOSES
+--------------------------------------------------
+
+A1  The most common cause: the program files are not complete.
+    - Check the deployment copied EVERYTHING (see the SETUP guide,
+      step 4). In particular the server needs these:
+          backend\dist\server.cjs
+          backend\dist\sql-wasm.wasm
+          backend\db\migrations\  (all four .js files AND package.json)
+    - Missing? Re-copy the whole boba-pos folder from the pen drive
+      and run step 5 again.
+
+A2  Check the server log for the real error:
+        C:\boba-pos\backend\data\server.log
+    - Seen "Cannot find module ..."? → a file/folder is missing,
+      see A1.
+    - Seen "port 4000 ... in use"? → another copy of the POS is
+      already running, or an old server window is still open.
+      Solution: close the extra "Boba POS Server" window, or switch
+      the computer off and on, then run start_pos.cmd again.
+    - Seen "JWT_SECRET must be set in production"? → someone set
+      NODE_ENV=production but no JWT_SECRET. Undo that; in normal use
+      do not set NODE_ENV at all.
+    - Seen anything else? Copy the message and ask support.
+
+A3  The error window disappears too fast to read.
+    - Run the server manually (the black-window steps above) - it
+      stays open and shows the error.
+
+A4  Node.js reports an "unknown" version or "cannot find node".
+    - Node is not installed or only partially installed. Re-install
+      Node 12.22.12 (SETUP step 2). Then REBOOT the computer.
+
+--------------------------------------------------
+B. THE PAGE OPENS BUT LOGIN FAILS / LOOKS BROKEN
+--------------------------------------------------
+
+B1  Server died but browser still shows the old page.
+    - Open windows\start_pos.cmd again; it re-opens the page.
+
+B2  "Invalid email or password" for a correct password.
+    - NORMAL after someone changed that user's password. The owner
+      can reset it in Settings > Users. Cashiers: ask the owner.
+    - If the browser is doing something odd, press Ctrl+F5 (hard
+      refresh) once.
+
+B3  The page shows odd symbols or looks wrong.
+    - You opened the app on an OLD browser (IE). The POS needs Chrome
+      109 / Firefox ESR. Open it in Chrome instead (SETUP step 3) and
+      make Chrome the default browser.
+
+B4  "Session expired" or it keeps sending me back to the login page.
+    - This happens ~24 hours after login if it stayed logged in.
+      Just sign in again. No data is lost, ever.
+
+--------------------------------------------------
+C. DATABASE / "POS.DB" PROBLEMS
+--------------------------------------------------
+
+C1  The dashboard or Sales show nothing (0 sales) when there were sales.
+    - You are probably looking at a different/empty database. The
+      program uses:  C:\boba-pos\backend\data\pos.db
+      Do not copy files into random folders. If you restored a backup
+      (see E2), the restored file must have gone to that exact path.
+
+C2  "no such table" or "database disk image is malformed".
+    - The database file is damaged. Restore the latest daily backup
+      right away (see E2). Note: a malformed file only happens if the
+      power died in the middle of saving, which is now prevented by a
+      built-in safety disk write. Still possible if the disk is dying.
+    - After restoring, remind everyone: close the shop with "Close for
+      the day" so the nightly backup always exists.
+
+C3  I want a clear, fresh start (last resort).
+    - STOP the server (Close for the day), then delete
+        C:\boba-pos\backend\data\pos.db
+      The next start creates a fresh one with the seeded owner
+      (mavisampim@gmail.com / Owner@123) and the default menu.
+      ALWAYS first copy the old pos.db to a pen drive before deleting
+      it - deleting is permanent.
+
+--------------------------------------------------
+D. LOGIN / USERS / LOCKOUTS
+--------------------------------------------------
+
+D1  I am locked out: I set my own account to Inactive.
+    - The program REFUSES to deactivate the last active owner, so this
+      should not happen. If you still cannot get in, use the second
+      owner/manager account, or restore the database from the newest
+      backup (E2), or as a last resort delete pos.db (C3) and reclaim
+      the shop defaults.
+
+D2  I cannot create a new user / "Cannot create".
+    - Only an OWNER creates users. Settings > Users, owner account.
+    - Passwords must be at least 8 characters; try a longer one.
+
+D3  Someone was fired - I want to block them.
+    - Settings > Users > Edit that user > set status INACTIVE. Their
+      history and sales stay intact; they just can't sign in.
+
+--------------------------------------------------
+E. BACKUPS AND RESTORE
+--------------------------------------------------
+
+E1  I see backup files but "Close for the day" says no backup.
+    - The daily backup folder is:
+        C:\boba-pos\backend\data\backups\
+      It keeps the last 30 days and deletes older ones automatically.
+    - The pen-drive copy only happens if a pen drive is actually
+      plugged in at close time. Check the folder "BobaPOS Backups" on
+      the pen drive.
+
+E2  How do I get yesterday's data back?
+    1. If the POS is running: click "Close for the day" and wait for
+       the server window to close completely. The server MUST be fully
+       stopped before restoring.
+    2. Right-click  windows\restore_backup.cmd  → Run as administrator.
+    3. Follow the prompts. It lists the daily backup dates, always
+       keeps a safety copy of the current database first, then replaces
+       pos.db with the chosen day's copy.
+    4. Start the POS again (start_pos.cmd) and check the Sales page.
+    - Restores are recorded in  backups\restore-log.txt.
+
+E3  "Close for the day" hangs or the wrong day shows on the report.
+    - Somebody may have left the POS open past midnight. The program
+      uses the clock on the computer. Fix: keep the computer's clock
+      correct (date + time, timezone Accra). Set it in Control Panel >
+      Date and Time.
+
+--------------------------------------------------
+F. MOBILE MONEY / PAYMENTS
+--------------------------------------------------
+
+F1  "Mobile Money requires a phone number or last 4 digits".
+    - Type either the customer's phone number or the last 4 digits of
+      their payment notification (e.g. 4821). This is required for
+      every Mobile Money sale.
+
+F2  "Payment must be confirmed before finalizing".
+    - Tick the "Payment received" box after the money actually arrived
+      on the phone. The POS will not finish the sale without it.
+
+F3  A payment reference shows only **** (e.g. ****4821).
+    - Correct and intentional: the full reference is hidden, only the
+      last 4 digits are kept, to avoid someone later reading off a
+      full transaction number.
+
+--------------------------------------------------
+G. PRINTER / RECEIPTS
+--------------------------------------------------
+
+G1  No receipt prints.
+    - The receipt prints from the browser's print dialog (Ctrl+P).
+      Pick the receipt printer.
+    - Printer listed but offline: check power/paper/cable; click the
+      printer and choose "Use printer offline" off.
+
+G2  Receipt is too big/small or missing the logo.
+    - The receipt layout is built into the program (paper width fixed).
+      Switch the browser to "landscape/shrink to fit" if needed. There
+      is no separate logo to upload; the logo is fixed by design.
+
+--------------------------------------------------
+H. GENERAL / WEIRD BEHAVIOUR
+--------------------------------------------------
+
+H1  The POS starts but the browser does not.
+    - Open Chrome/Firefox on this computer and type:
+        http://localhost:4000
+    - If that page does not load either, the server likely crashed.
+      Check section A.
+
+H2  Antivirus deleted or blocked something.
+    - Some antivirus dislikes Node.js writing files. Add an exception
+      for  C:\boba-pos  (folder). Then re-copy the deployment if files
+      were deleted (A1).
+
+H3  The screen shows an error "Unexpected token" / "cannot read
+    property of undefined".
+    - Write down the FULL text and send it to support with the
+      server.log tail. Almost always it means the frontend\dist or the
+      migrations folder are missing/old (re-copy, A1) or the browser is
+      too old (B3).
+
+H4  Multiple browsers/tabs open, sales look duplicated.
+    - Open one browser window only. Duplicate protection exists, but a
+      single cashier window is simpler and safer.
+
+H5  I want to move the shop to another computer.
+    - Stop the server, copy the whole boba-pos folder (or at least
+      backend\data\pos.db + the backups\ folder) to the new computer,
+      then do SETUP steps 1-5 on the new machine and copy the data in.
+
+--------------------------------------------------
+IF NOTHING HERE WORKS
+--------------------------------------------------
+Prepare this before asking support:
+  1. The last 30 lines of  backend\data\server.log
+  2. The exact error text (or a photo of the black window)
+  3. Which computer (Windows 7? which browser?)
+Send it; support fixes it from that.

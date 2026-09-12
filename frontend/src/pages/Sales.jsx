@@ -229,8 +229,11 @@ export default function Sales() {
       <ConfirmDialog
         open={!!confirm}
         title={confirm?.action === 'cancel' ? 'Cancel this order?' : 'Refund this order?'}
-        message={`This will update the order status and restore the sold stock. Historical records are kept.`}
+        message={`This will update the order status and restore the sold stock. Historical records are kept. The reason is saved with the order.`}
         confirmLabel={confirm?.action === 'cancel' ? 'Cancel order' : 'Refund order'}
+        withReason
+        reason={confirm?.reason ?? ''}
+        onReasonChange={(v) => setConfirm((c) => ({ ...c, reason: v }))}
         onConfirm={() => confirm && runAction(confirm.action)}
         onCancel={() => setConfirm(null)}
       />

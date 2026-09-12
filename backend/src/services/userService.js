@@ -40,6 +40,15 @@ export function updateUser({ userId, patch, user }) {
     const db = getDb();
     const target = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
     if (!target) throw new AppError(404, 'USER_NOT_FOUND', 'User not found.');
+    const wantsInactive = patch.status === 'INACTIVE';
+    const targetIsActiveOwner = target.role === 'OWNER' && target.status === 'ACTIVE';
+    if (wantsInactive && targetIsActiveOwner) {
+      // Prevent the last active OWNER from being deactivated (would lock everyone out).
+      const owners = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'OWNER' AND status = 'ACTIVE'").get();
+      if (owners.c <= 1) {
+        throw new AppError(409, 'LAST_OWNER', 'Cannot deactivate the only active owner.');
+      }
+    }
     if (userId === user.id && patch.role && patch.role !== user.role) {
       // Prevent the last OWNER from demoting themselves.
       const owners = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'OWNER' AND status = 'ACTIVE'").get();

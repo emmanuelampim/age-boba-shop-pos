@@ -9,6 +9,11 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
   variant = 'danger',
+  withReason = false,
+  reason = '',
+  onReasonChange,
+  reasonLabel = 'Reason (optional)',
+  reasonPlaceholder = 'e.g. customer changed their mind',
 }) {
   return (
     <Modal
@@ -27,6 +32,19 @@ export default function ConfirmDialog({
       }
     >
       <p className="confirm-message">{message}</p>
+      {withReason && (
+        <div className="input-group mt-sm">
+          <label htmlFor="confirm-reason">{reasonLabel}</label>
+          <input
+            id="confirm-reason"
+            className="input"
+            value={reason}
+            onChange={(e) => onReasonChange?.(e.target.value)}
+            maxLength={500}
+            placeholder={reasonPlaceholder}
+          />
+        </div>
+      )}
     </Modal>
   );
 }

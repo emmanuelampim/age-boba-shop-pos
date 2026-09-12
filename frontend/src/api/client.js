@@ -28,6 +28,12 @@ async function request(path, options = {}) {
     body: body ? JSON.stringify(body) : undefined,
   })
 
+  // A 401 while a session is open means the login has expired. Send the
+  // cashier back to the sign-in page instead of showing broken screens.
+  if (res.status === 401 && !path.startsWith('/auth/login') && !window.location.pathname.startsWith('/login')) {
+    window.location.assign('/login')
+  }
+
   const data = await res.json()
 
   if (!data.success) {
@@ -69,6 +75,9 @@ export async function downloadFile(path, params, filename) {
   }
 
   const res = await fetch(url, { method: 'GET', credentials: 'include' })
+  if (res.status === 401 && !window.location.pathname.startsWith('/login')) {
+    window.location.assign('/login')
+  }
   if (!res.ok) {
     throw new Error(`Download failed (${res.status}). Try again.`)
   }

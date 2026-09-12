@@ -1,4 +1,4 @@
-export default function up(db) {
+module.exports = function up(db) {
   const cols = db.prepare('PRAGMA table_info(orders)').all().map((c) => c.name);
   if (!cols.includes('momo_confirmed')) {
     db.exec('ALTER TABLE orders ADD COLUMN momo_confirmed INTEGER NOT NULL DEFAULT 0');
@@ -15,4 +15,4 @@ export default function up(db) {
     );
   }
   return {};
-}
+};

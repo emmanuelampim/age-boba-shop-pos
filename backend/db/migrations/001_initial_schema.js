@@ -1,4 +1,4 @@
-export default function up(db) {
+module.exports = function up(db) {
   db.exec(`
     CREATE TABLE users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,4 +188,4 @@ export default function up(db) {
     CREATE INDEX idx_audit_created ON audit_logs(created_at DESC);
     CREATE INDEX idx_status_histories_order ON order_status_histories(order_id);
   `);
-}
+};

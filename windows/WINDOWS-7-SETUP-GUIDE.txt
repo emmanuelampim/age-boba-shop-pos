@@ -1,0 +1,192 @@
+WINDOWS 7 SETUP GUIDE - AGE BOBA SHOP POS
+==========================================
+
+This guide sets up the shop's POS on a Windows 7 computer. It is meant
+for the owner or a technician who can follow step-by-step instructions.
+There are 17 steps. Do them in order, start to finish.
+
+WHAT YOU ARE BUILDING
+---------------------
+A self-contained cash register that runs 100% on the shop computer.
+No internet. No monthly fees. It saves every sale to one local file
+(backend\data\pos.db), prints receipts on paper, and keeps automatic
+daily backups.
+
+--------------------------------------------------
+PART A - GET THE PIECES (steps 1-5)
+--------------------------------------------------
+
+STEP 1 - Check the computer
+  - Windows 7 (32-bit or 64-bit) with at least 4 GB of RAM.
+  - A working screen, keyboard and mouse.
+  - Any USB port for the backup pen drive (recommended).
+  - Install ALL waiting Windows updates first (Control Panel >
+    Windows Update). Updates are needed for the Node.js installer.
+  - If the computer was never updated, install "Internet Explorer 11"
+    first; Node.js needs a recent IE to install.
+
+STEP 2 - Install Node.js 12.22.12
+  - This is the LAST version of Node that runs on Windows 7.
+  - Download  node-v12.22.12-x64.msi  from the official Node site
+    (nodejs.org/dist/v12.22.12/). For a 32-bit computer use
+    node-v12.22.12-x86.msi instead.
+  - Run the .msi file. Accept all default choices. Click Next/Finish.
+  - TEST: press the Windows key, type cmd, press Enter. In the black
+    window type:
+        node -v
+    and press Enter. It must print something like v12.22.12.
+  - If the Node installer refuses to run, go to STEP 1 (updates + IE11).
+
+STEP 3 - Install a browser (any one is fine)
+  - Chrome 109 is the last Chrome that supports Windows 7. Download
+    the offline installer from chrome.google.com while this computer
+    still has internet (after that, no internet is needed).
+  - Mozilla Firefox ESR also works well.
+  - Make the browser your default browser (it is the screen the
+    cashier will use).
+
+STEP 4 - Copy the program to the computer
+  - Put the whole boba-pos folder onto a USB pen drive on another
+    computer, then copy it into C:\boba-pos on this computer.
+  - Make sure you see this file inside:
+        C:\boba-pos\windows\start_pos.cmd
+  - IMPORTANT: copy the FOLDER, not just some files. The deployment
+    needs these folders:
+        backend\dist\server.cjs      (the server)
+        backend\dist\sql-wasm.wasm   (the database engine)
+        backend\db\migrations\       (the database setup files,
+                                      INCLUDING the package.json)
+        frontend\dist\               (the POS screens)
+        backend\scripts\             (needed only for re-building)
+        windows\                     (these helper scripts)
+
+STEP 5 - Run it once to test
+  - Double-click  C:\boba-pos\windows\start_pos.cmd
+  - A small "Boba POS Server" window appears. A minute later the
+    browser opens at  http://localhost:4000  with the sign-in page.
+  - Sign in with the temporary owner account:
+        Email:    mavisampim@gmail.com
+        Password: Owner@123
+  - CHANGE THIS PASSWORD NOW (Steps 6-7).
+
+--------------------------------------------------
+PART B - FIRST-TIME SETTINGS (steps 6-10)
+--------------------------------------------------
+
+STEP 6 - Change the owner password
+  - Logged in (top-right corner shows your name). Open Settings >
+    Users. Click Edit on Mavis. Type a new strong password. Save.
+  - Write the password on the note page at the end of this guide and
+    keep it somewhere safe. If it is forgotten, see the troubleshooting
+    guide.
+
+STEP 7 - Check the shop details
+  - Settings > Shop. Confirm the name, address, phone and receipt
+    footer are the shop's real ones. Accept automatically when the
+    cashier should sign in (Yes/No).
+  - Settings > Hours: set opening/closing times for each day if wanted.
+
+STEP 8 - Review the menu
+  - Products → the milk tea menu, sizes and toppings are preloaded.
+  - To change a price: click the product, Edit. To hide an item (sold
+    out for the season) use "Inactive" instead of deleting it.
+  - Payment methods: Cash and Mobile Money are on. Turn on/off any
+    extra method under Settings.
+
+STEP 9 - Set the Mobile Money rule (important)
+  - When a customer pays with Mobile Money, the cashier types the phone
+    number OR the last 4 digits shown on the customer's phone, then
+    ticks "Payment received" ONLY after the money truly arrives
+    (confirm the notification on the customer's phone first).
+  - The system refuses to finish a Mobile Money sale unless this is
+    done. This is on purpose: it stops fake payments.
+
+STEP 10 - Check the users
+  - Settings > Users. Create one user per cashier (role Cashier), plus
+    a second Manager/Owner account if you have staff who cover for you.
+  - You CANNOT deactivate or delete the last active owner account.
+    This protects the shop from being locked out.
+
+--------------------------------------------------
+PART C - BACKUPS (steps 11-13)
+--------------------------------------------------
+
+STEP 11 - Understand where all data lives
+  - ALL shop data is the single file:  backend\data\pos.db
+  - Every sale is saved into it the moment it is confirmed. Copying
+    this one file is a complete backup.
+
+STEP 12 - Automatic daily backups
+  - "Close for the day" (see the daily guide) automatically keeps:
+        backend\data\backups\pos-YYYY-MM-DD.db
+        backend\data\backups\sales-YYYY-MM-DD.csv
+    (YYYY-MM-DD = the date, e.g. pos-2026-09-12.db). The last 30 days
+    are kept; older ones are removed by the program itself.
+  - Daily safety net WITHOUT closing the day: right-click
+        windows\install_backup.cmd  → Run as administrator
+    This schedules an automatic backup at 11:00 PM every day. Undo it
+    any time with windows\remove_backup.cmd.
+
+STEP 13 - USB pen drive backup (recommended)
+  - Leave a pen drive plugged into the computer. Every automatic
+    backup also copies into a folder called "BobaPOS Backups" on the
+    drive. That way even if the computer dies, the data survives.
+  - To use a fixed folder on the hard drive instead (for example
+    E:\BobaPOS Backups), open  windows\start_pos.cmd  in Notepad and
+    add this line just above the "netstat" line:
+        set USB_BACKUP_DIR=E:\BobaPOS Backups
+    then save and restart the POS.
+
+--------------------------------------------------
+PART D - MAKE IT START ITSELF (steps 14-15)
+--------------------------------------------------
+
+STEP 14 - Start with the computer
+  - Right-click  windows\install_autostart.cmd  → Run as the user who
+    logs in when the shop opens.
+  - It registers the POS in THREE ways so it always starts even if
+    antivirus or a mistake disables one of them. It also starts the
+    POS right now.
+  - After this, when the shop computer boots and the person logs in,
+    the POS starts hidden and the cashier screen opens by itself in
+    about 10 seconds. No clicks needed.
+  - To remove auto-start later: right-click windows\remove_autostart.cmd
+
+STEP 15 - Close the shop door to the internet (optional but safe)
+  - The POS only talks to "localhost" (this computer). It never sends
+    anything out. If Windows asks about firewall access, choose
+    "Private networks" only and uncheck "Public networks".
+  - If the computer has no internet at all: remember step 3 - install
+    the browser BEFORE disconnecting. After that the POS runs fully
+    offline.
+
+--------------------------------------------------
+PART E - FINAL CHECKS + HANDOVER (steps 16-17)
+--------------------------------------------------
+
+STEP 16 - Full walk-through with the cashier
+  - Ring up a real drink with Cash. Print the receipt.
+  - Ring up another with Mobile Money, type the last 4 digits, tick
+    "Payment received", print the receipt.
+  - Cancel a sale from the Sales page and type a reason.
+  - Open the dashboard and Today's Sales to see both appear.
+  - Click "Close for the day" and confirm everything saved.
+
+STEP 17 - Write the owner keys on this page and finish
+  ------------------------------------------------------------------
+   Owner email:    mavisampim@gmail.com
+   Owner password: _________________________
+   Shop computer:  C:\boba-pos
+   Days to keep backups: 30 (automatic)
+  ------------------------------------------------------------------
+  From now on the cashier only needs the DAILY-USE-GUIDE.
+
+--------------------------------------------------
+QUICK REFERENCE
+--------------------------------------------------
+  Start the POS:       double-click windows\start_pos.cmd
+  Stop/close day:      in the POS, click "Close for the day"
+  Backup by hand:      copy backend\data\pos.db somewhere safe
+  Restore a day:       right-click windows\restore_backup.cmd → Run
+  All data is in:      backend\data\pos.db
+  Server log:          backend\data\server.log

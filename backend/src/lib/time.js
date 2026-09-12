@@ -39,19 +39,18 @@ export function formatZoned(isoUtc) {
 }
 
 // Day start ("today") in Africa/Accra, returned as a UTC ISO string.
+// Ghana is UTC+0 all year round (no daylight saving), so today's date
+// there is the same as the UTC date. Computed from UTC directly so the
+// server does not depend on ICU timezone data (which can be missing in
+// minimal Node.js builds).
 export function todayStartUtc() {
   const now = new Date();
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now);
-  const map = {};
-  for (const p of parts) map[p.type] = p.value;
-  // Construct the local "00:00:00" wall time and treat it as UTC for range comparisons,
-  // since SQLite stores UTC timestamps.
-  return `${map.year}-${map.month}-${map.day}T00:00:00.000Z`;
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(now.getUTCDate()).padStart(2, '0');
+  // Construct the Accra "00:00:00" wall time as a UTC timestamp for range
+  // comparisons, since SQLite stores UTC timestamps.
+  return `${y}-${m}-${d}T00:00:00.000Z`;
 }
 
 export function todayEndUtc() {

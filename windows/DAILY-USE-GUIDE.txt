@@ -1,0 +1,145 @@
+DAILY USE GUIDE - AGE BOBA SHOP POS
+===================================
+
+This guide is for the cashier and the owner. It explains a normal day
+with the POS: opening, selling, Mobile Money, closing, and looking up
+yesterday's sales. Nothing in this guide needs a computer expert.
+
+--------------------------------------------------
+1. OPENING THE SHOP
+--------------------------------------------------
+1.1  Turn the computer on and let the person log in.
+1.2  Wait about 10 seconds. The cashier screen opens by itself.
+1.3  If it does not open: double-click  C:\boba-pos\windows\start_pos.cmd
+1.4  Sign in with your own user (name + password). The cashier
+     normally only needs a Cashier account. Get it from the owner.
+1.5  You are logged in when the grey bar at the top shows your name.
+
+--------------------------------------------------
+2. SELLING A DRINK (CASH)
+--------------------------------------------------
+2.1  Make sure you are on the "New Sale" screen.
+2.2  Tap the drink category (e.g. Milk Tea), then the drink.
+2.3  Choose a size (Small/Medium/Large) if the drink offers sizes.
+2.4  Add toppings if the customer wants them.
+2.5  Change the quantity with the + and - buttons (or set 1).
+2.6  The basket on the right shows the running total. Check it with
+     the customer before paying.
+2.7  Choose the payment method. For cash; choose Cash.
+2.8  Press "Charge" / "Complete sale". The sale is now saved; it can
+     never be lost.
+2.9  Confirm the change given, then the receipt prints. Hand it over.
+
+--------------------------------------------------
+3. SELLING A DRINK (MOBILE MONEY - IMPORTANT)
+--------------------------------------------------
+3.1  Confirm the payment has ACTUALLY arrived before finishing:
+     ask the customer to show you the confirmation notification on
+     their phone, or check the money notification on your own phone.
+3.2  In the POS, choose Mobile Money as the payment method.
+3.3  Type the customer's phone number OR the last 4 digits shown on
+     their phone notification (e.g. 4821).
+3.4  Tick the box "Payment received" ONLY when the money has really
+     arrived.
+3.5  Finish the sale. The phone number/reference is saved with the
+     order (the full reference is hidden; only last 4 digits show).
+3.6  If the money has NOT arrived yet, do NOT tick the box - wait for
+     the customer to send it.
+3.7  The POS will refuse to complete a Mobile Money sale that has no
+     phone number/last-4 digits or no confirmation. That is on
+     purpose: it protects the shop from fake payments.
+
+--------------------------------------------------
+4. WRONG ORDERS / CANCELLING
+--------------------------------------------------
+4.1  Before finishing: use the trash/remove on the basket line and
+     ring it again.
+4.2  After finishing, go to Sales, find the order.
+     - Cancel: removes the sale and gives the stock back (money
+       returned to the customer).
+     - Refund: keeps the sale recorded but marks it refunded.
+4.3  The POS ALWAYS asks for a reason ("customer changed their mind",
+     etc.). Type it - this is the record of WHY, in case of disputes.
+4.4  Only an owner or manager can cancel/refund. Ask them to do it.
+
+--------------------------------------------------
+5. DASHBOARD / QUICK LOOK
+--------------------------------------------------
+5.1  The dashboard shows, for TODAY:
+     - money taken so far and number of sales
+     - Cash vs Mobile Money split
+     - best-selling drinks
+     - low-stock warnings (e.g. "Cups: 12 left")
+5.2  Anyone can look. Only the owner/manager changes things.
+
+--------------------------------------------------
+6. LOOKING UP YESTERDAY'S / ANY DAY'S SALES
+--------------------------------------------------
+6.1  Click Sales.
+6.2  Pick a date range (or use the search box for an order number
+     or a note).
+6.3  Every sale shows: time, items, payment method, staff, status.
+6.4  Click an order to see its full detail, including the last 4
+     digits of a Mobile Money reference and any cancellation reason.
+6.5  Download a spreadsheet of any date range:
+     click "Download report (Excel)" - a file downloads that opens in
+     Excel / LibreOffice / Google Sheets. One row per item sold.
+     Send the file to anyone who needs it; no internet needed.
+
+--------------------------------------------------
+7. STOCK AND MENU SMALL CHANGES (owner/manager only)
+--------------------------------------------------
+7.1  Products: change a price, hide a drink (Inactive), add a new
+     drink/size/topping. Do NOT delete products - keep them Inactive.
+7.2  Inventory: record deliveries (Restock) and waste (Waste).
+     The program warns when an item gets low.
+7.3  Settings > Users: add/disable staff accounts; change passwords.
+     Remember: you cannot remove the last active owner - that is on
+     purpose.
+7.4  Settings > Shop/Hours: edit the shop name, hours, receipt text.
+
+--------------------------------------------------
+8. CLOSING FOR THE DAY (do this every night)
+--------------------------------------------------
+8.1  When the shop closes, click "Close for the day" at the bottom-
+     left of the menu bar.
+8.2  Confirm you are closing.
+8.3  Wait for the green "All sales saved" screen. It means:
+       - every sale is saved
+       - a full backup file was written automatically
+         (backend\data\backups\pos-YYYY-MM-DD.db)
+       - a spreadsheet of the day is saved
+         (backend\data\backups\sales-YYYY-MM-DD.csv)
+       - if a pen drive is plugged in, those files were ALSO copied
+         onto the pen drive
+8.4  It then turns the server off. Now (and only now) it is safe to
+     switch off the computer.
+8.5  If someone forgot and the shop needs to keep going: just turn the
+     computer on again and open the POS - today's data is still all
+     there. "Close for the day" only makes the daily backup copy.
+
+--------------------------------------------------
+9. LOCKED OUT / IDLE / LONG GAPS
+--------------------------------------------------
+9.1  If the screen shows "Session expired" or login again: just sign
+     in again with your own name and password. All sales are saved;
+     nothing is lost.
+9.2  The computer can be left on overnight; the POS does not expire
+     sales. If you want to log out at night, click your name → Logout.
+
+--------------------------------------------------
+10. NO INTERNET, POWER CUTS, ETC.
+--------------------------------------------------
+10.1  The POS works without internet, always (once it is installed).
+10.2  Power cut mid-sale: every finished sale was already saved to
+      disk. On restart, open the POS - everything is there.
+10.3  Computer freezes: turn it off with the power button, turn back
+      on, log in, the POS opens by itself. Nothing to recover - every
+      confirmed sale is already saved.
+
+--------------------------------------------------
+THE ONE-LINE RULE
+--------------------------------------------------
+Finish each sale fully, tick Mobile Money only when the money has
+really arrived, cancel/refund with a reason, and close for the day
+every evening so the backup copy is made.

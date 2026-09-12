@@ -1,4 +1,4 @@
-export default function up(db) {
+module.exports = function up(db) {
   const cols = db.prepare("PRAGMA table_info(orders)").all().map((c) => c.name);
   if (!cols.includes('customer_phone')) {
     db.exec('ALTER TABLE orders ADD COLUMN customer_phone TEXT');
@@ -7,4 +7,4 @@ export default function up(db) {
     db.exec('ALTER TABLE orders ADD COLUMN payment_ref TEXT');
   }
   return {};
-}
+};

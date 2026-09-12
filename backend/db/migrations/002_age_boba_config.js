@@ -8,7 +8,7 @@ const HOURS_DEFAULT = JSON.stringify({
   sat: { open: '15:00', close: '21:00', closed: false },
 });
 
-export default function up(db) {
+module.exports = function up(db) {
   db.prepare(
     `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
      ON CONFLICT(key) DO NOTHING`,
@@ -39,4 +39,4 @@ export default function up(db) {
   db.prepare("UPDATE payment_methods SET is_active = 0 WHERE code IN ('CARD', 'OTHER')").run();
 
   return { branch };
-}
+};
