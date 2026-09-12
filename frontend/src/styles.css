@@ -763,17 +763,32 @@ tbody tr:hover { background: var(--color-bg); }
   margin: 0;
 }
 
-/* Print only the receipt, laid out for a variable-length thermal roll.
-   Width is 80mm; height is "auto" because receipts vary in length. The
-   on-screen layout is untouched — everything here applies only when the
-   user prints via Chrome's print dialog. */
 @media print {
   html, body { margin: 0; padding: 0; background: #fff; }
-  body * { visibility: hidden; }
 
-  /* The receipt lives inside a .modal (position: fixed on screen). In print,
-     reset the modal to static layout so position:absolute on .receipt
-     resolves to the page top-left corner rather than the dialog box. */
+  /* Kill ALL app layout in print. display:none (not visibility:hidden)
+     removes the layout space entirely, so the invisible screen layout no
+     longer paginates into blank sheets on the thermal roll. */
+  body * { display: none !important; }
+
+  /* Narrowly re-display only the containers on the path from body down to
+     the receipt. The page wrapper for /sale and /sales is an anonymous div,
+     matched via .main-content > div. Everything else (sidebar, header,
+     toasts…) stays display:none. */
+  #root,
+  .app-shell,
+  .main-content,
+  .main-content > div,
+  .modal,
+  .modal-body {
+    display: revert !important;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  /* The receipt lives inside a .modal (position: fixed on screen). Reset it
+     to static so the receipt flows naturally at the top of the document. */
   .modal {
     position: static !important;
     inset: auto !important;
@@ -791,11 +806,8 @@ tbody tr:hover { background: var(--color-bg); }
   .modal-header, .modal-footer { display: none !important; }
   .modal-body { padding: 0 !important; }
 
-  .receipt, .receipt * { visibility: visible; }
+  .receipt, .receipt * { display: revert !important; }
   .receipt {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: var(--receipt-width);
     max-width: var(--receipt-width);
     margin: 0;
@@ -803,13 +815,16 @@ tbody tr:hover { background: var(--color-bg); }
     border: none;
     box-shadow: none;
     font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
     line-height: 1.4;
     color: #000;
     background: #fff;
   }
-  .receipt-watermark { display: none; }
+  .receipt-watermark { display: none !important; }
   .receipt-header, .receipt-footer { text-align: center; }
+  .receipt-header p, .receipt-sub, .receipt-footer { color: #000; }
+  .receipt-total { font-weight: 800; }
   .receipt-item, .receipt-line {
     break-inside: avoid;
     page-break-inside: avoid;

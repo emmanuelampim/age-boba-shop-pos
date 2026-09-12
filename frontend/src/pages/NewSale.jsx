@@ -10,6 +10,7 @@ import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import Skeleton from '../components/ui/Skeleton'
 import ReceiptView from '../components/ReceiptView'
+import { buildReceiptText } from '../lib/receiptText'
 
 const PRODUCT_ICON = '🧋'
 
@@ -42,6 +43,7 @@ export default function NewSale() {
   const [requestId, setRequestId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [receipt, setReceipt] = useState(null)
+  const [printing, setPrinting] = useState(false)
   const { user } = useAuth()
 
   const load = useCallback(() => {
@@ -174,9 +176,18 @@ export default function NewSale() {
     }
   }
 
-  const printReceipt = () => {
+  const printReceipt = async () => {
     if (!receipt) return
-    window.print()
+    setPrinting(true)
+    try {
+      await api.printReceipt(buildReceiptText(receipt, settings))
+      addToast('Receipt sent to printer.', 'success')
+    } catch {
+      addToast('Direct printing unavailable — used browser print preview.', 'info')
+      window.print()
+    } finally {
+      setPrinting(false)
+    }
   }
 
   const selectedPayName = paymentMethods.find((m) => m.id === payMethod)?.name || ''
@@ -506,8 +517,8 @@ export default function NewSale() {
       <Modal open={!!receipt} title="Receipt" onClose={() => setReceipt(null)}>
         <ReceiptView order={receipt} settings={settings} />
         <div className="mt-md">
-          <button className="btn btn-primary w-full" onClick={printReceipt}>
-            🖨️ Print receipt
+          <button className="btn btn-primary w-full" onClick={printReceipt} disabled={printing}>
+            {printing ? '🖨️ Printing…' : '🖨️ Print receipt'}
           </button>
           <button className="btn btn-secondary w-full mt-sm" onClick={() => setReceipt(null)}>
             New sale
