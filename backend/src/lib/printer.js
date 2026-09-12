@@ -21,6 +21,10 @@ export function canPrintLocally() {
 
 const USE_RAW = process.env.PRINTER_RAW !== '0';
 
+// Print density (grayscale) 0–8, where 8 is darkest. Runs on every receipt
+// because ESC @ (which resets it) is sent at the start of each job.
+const PRINTER_DENSITY = Math.max(0, Math.min(8, Number(process.env.PRINTER_DENSITY ?? 8) || 8));
+
 // Keep only characters a thermal printer's built-in font can render.
 // The Ghana cedi sign (U+20B5) is not in ESC/POS fonts — print "GH¢" instead
 // (the common Ghana-thermal rendering) — and drop anything else exotic.
@@ -55,6 +59,7 @@ export function buildEscPosBytes(text) {
   return Buffer.concat([
     Buffer.from([0x1b, 0x40]), // ESC @ : initialize printer
     Buffer.from([0x1b, 0x74, 0x10]), // ESC t 16 : Windows-1252 (so ¢ renders)
+    Buffer.from([0x1b, 0x6d, PRINTER_DENSITY]), // ESC m n : print grayscale 0–8 (8 = darkest)
     body,
     Buffer.from('\n\n\n'), // trailing feed so the blade clears the last line
     Buffer.from([0x1d, 0x56, 0x42, 0x02, 0x01]), // GS V B n=2 m=1 : feed + partial cut
